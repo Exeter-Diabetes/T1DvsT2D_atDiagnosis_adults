@@ -1,0 +1,5 @@
+MedCodeId	Observations	OriginalReadCode	CleansedReadCode	Term	SnomedCTConceptId	SnomedCTDescriptionId	Release	EmisCodeCategoryId
+485624014	58718	C1541	C154100	Addison's disease	363732003	485624014	NA	32
+417461000006112	469	Cyu49	Cyu4900	Primary adrenocortical insufficiency	373662000	1212124016	NA	32
+3747591000006113	14	^ESCTAD374759	NA	Addison's disease due to autoimmunity	76715008	127380018	NA	31
+6250371000006117	31	^ESCTAD625037	NA	Addison disease	363732003	2837781013	NA	32
