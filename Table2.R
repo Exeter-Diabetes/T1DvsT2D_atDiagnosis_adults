@@ -1,201 +1,203 @@
-############################################################################################
-#
-#Identifying features at presentation that can differentiate between T1D & T2D
-#beyond Age at diagnosis & BMI
+#####################################################################################
 
-#This does this in StartRight 18-50s
-#Primary Outcome
+#Paper figures
 
-#Table 2
+#Table 5
+#Coefficients and ORs for Scoring table
+#Unstandardised
 
+###################################################################################
 
-
-#############################################################################################
-#load libraries
+#Libraries -----------------------------------------------------------------------------
 library(tidyverse)
 library(writexl)
 
-#load functions
-source("functions/model_continuous1.R")
-source("functions/cat_contingency.R")
+#load functions ------------------------------------------------------------------
+source("functions/model_info1.R")
+load("m1.RData")
 
-#load data-------------------------------------------------------------------------
-#load dataset from 01_11
-load("~/PhD/StartRight_paper/data/SR_SRout_ccc_20_3_2025.RData")
+#Load data -------------------------------------------------------------------------
+load("~/PhD/StartRight_paper/T1DvsT2D_atDiagnosis_adults/data/SR_SRout_ccc_20_3_2025.RData")
+#Complete case model data -------------------------------------------------------------
+##Define variables in models12 & models3------------------------------------------------
+### Models12 ------------------------------------------------------------------------
+#Continuous variables
+varlist_12 = c("AgeatDiagnosis",
+               "bmi_model",
+               "HbA1c_at_diagnosis_v1"
+)
+#create varlist_cat (categorical variables of interest names)
+varlist_cat_12 = c(
+  "Gender_v1",
+  "DKA",
+  "Unintentional_weight_loss_v1",
+  "autoimmune",
+  "osmotic",
+  "famhisnoninsdiab",
+  #"famhisauto",
+  "num_anti"
+)
+all_vars_12 <- c(varlist_12, varlist_cat_12)
 
-#Add model vars ----------------------------------------------------------------------
-SR_SRout_ccc <- SR_SRout_ccc %>%
+##Make complete case datasets ----------------------------------------------------------
+###StartRight ----------------------------------------------------------------------------
+SR_SRout_ccc<- SR_SRout_ccc %>%
   mutate(bmi_model = ifelse(is.na(bmi_diag),
                             bmi,
                             bmi_diag),
          famhisnoninsdiab = ifelse(is.na(famhisnoninsdiab), "No", famhisnoninsdiab),
-         famhisauto = ifelse(is.na(famhisauto), "0", famhisauto)
-  ) 
-
-
-#list of vars that add -------------------------------------------------------------
-
-
-#Create variable lists -----------------------------------------------------------------
-## Continuous variables 
-varlist = c("AgeatDiagnosis", 
-            "bmi_model", 
-            #"Waist_v1", 
-            "wh_ratio_v1",
-            "HbA1c_at_diagnosis_v1"
-)
-## create varlist_cat (categorical variables of interest names)
-varlist_cat = c(
-  "Gender_v1",
-  "DKA", 
-  "Unintentional_weight_loss_v1", 
-  "autoimmune", 
-  "osmotic", 
-  "famhisdiab",
-  "famhisnoninsdiab",
-  "famhisauto"
-)
-
-#Produce complete case datasets ----------------------------------------------------------
-all_vars <- c(varlist, varlist_cat)
-##StartRight
-SR_SRout_ccc <- SR_SRout_ccc %>%
-  drop_na(all_of(all_vars))
-
-
-
-
-#A) StartRight -----------------------------------------------------------------------
-##1) For SRoutcome in SR_SRout - Table 1 ----------------------------------------------------
+         Eth_4cat = ifelse(Eth_5cat %in% c("Other", "Mixed"), "Other/Mixed", Eth_5cat)
+  )
 SR_SRout_ccc$SRoutcome <- as.numeric(SR_SRout_ccc$SRoutcome)
-###i) Univariate on continuous numeric features -----------------------------------------
-varlist = c("AgeatDiagnosis", 
-            "bmi_model", 
-            #"Waist_v1", 
-            #"wh_ratio_v1",
-            "HbA1c_at_diagnosis_v1"
-)
-tbl1_thresholds <- c(
-  "<37",
-  "<28",
-  ">80")
-model_continuous(varlist,
-                 dataset = SR_SRout_ccc,
-                 outcome = "SRoutcome",
-                 #thresholds = tbl1_thresholds,
-                 saving_name = "tables/table2_cont_thresholds",
-                 complete_case = TRUE,
-                 plots = FALSE)
-model_continuous(varlist,
-                 dataset = SR_SRout_ccc,
-                 outcome = "SRoutcome",
-                 thresholds = tbl1_thresholds,
-                 saving_name = "tables/Table2_cont",
-                 complete_case = TRUE,
-                 plots = FALSE)
+SR_SRout_ccc$DKA <- as.character(SR_SRout_ccc$DKA)
+SR_SRout_ccc$osmotic <- as.character(SR_SRout_ccc$osmotic)
+SR_SRout_ccc$autoimmune <- as.character(SR_SRout_ccc$autoimmune)
 
-####WHR
-sum_table <- data.frame(variable = NA, 
-                        n = NA,
-                        Accuracy = NA, 
-                        Sensitivity = NA, 
-                        Specificity = NA, 
-                        PPV = NA, 
-                        NPV = NA)
-#assign numeric variable name to row
-sum_table$variable <- "wh_ratio_v1"
+#Model12
+SR_m12_data <- SR_SRout_ccc %>%
+  drop_na(all_of(all_vars_12))
 
-#print this variable to screen (for debugging purposes)
-print(var)
-#run logistic regression of defined outcome using numeric variable
-model <- glm(SRoutcome ~scale(as.numeric(wh_ratio_v1)), 
-             data = SR_SRout_ccc, 
-             family = binomial)
-#make new columns in dataset
-SR_SRout_ccc <- SR_SRout_ccc %>%
+
+#Test
+SR_m12_data <- SR_m12_data %>%
   mutate(
-    #make predicted probability of model in dataset column 
-    model_pp = predict(model, SR_SRout_ccc, type = "response")
+    agediag = factor(case_when(
+      AgeatDiagnosis <25 ~ "18-24",
+      AgeatDiagnosis <35 ~ "25-34",
+      AgeatDiagnosis <45 ~ "35-44",
+      AgeatDiagnosis >=45 ~ ">=45",
+    )),
+    bmi_cat = factor(case_when(
+      bmi_model < 25 ~ "<25",
+      bmi_model <35 ~ "25-35",
+      bmi_model >=35 ~ ">=35",
+    )),
+    hba1c_diag = factor(ifelse(
+      HbA1c_at_diagnosis_v1 < 58,"<58",
+      " >=58")))
+SR_m12_data %>%
+  group_by(agediag) %>%
+  summarise(
+    min = min(AgeatDiagnosis),
+    max = max(AgeatDiagnosis),
+    n = n()
   )
-#Run ROC analysis
-roc_model <- roc(SR_SRout_ccc$SRoutcome, 
-                 SR_SRout_ccc$wh_ratio_v1, 
-                 plot = TRUE, 
-                 print.thres = "best", 
-                 print.auc = TRUE, 
-                 ci = TRUE)
-#Extract valuable summary information from ROC object
-model_pr <- coords(roc_model, 
-                   x = "best", 
-                   ret=c("threshold"), 
-                   transpose = FALSE)
-threshold <- model_pr$threshold
-SR_SRout_ccc$cut_threshold <- ifelse(SR_SRout_ccc$wh_ratio_v1 < 0.90,
-                                   "1", 
-                                   "0")
-  
-  #Assign model summary information to summary data.frame
-
-  sens_spec <- prop.table(table(SR_SRout_ccc$cut_threshold, 
-                                SR_SRout_ccc$SRoutcome), 
-                          margin = 2)
-  sum_table$sensitivity <- sens_spec[str_detect(row.names(sens_spec), "1"), 
-                                     str_detect(colnames(sens_spec), "1")]
-  sum_table$specificity <- sens_spec[str_detect(row.names(sens_spec), "0"),
-                                     str_detect(colnames(sens_spec), "0")]
-  ppv_npv <- prop.table(table(SR_SRout_ccc$cut_threshold, 
-                              SR_SRout_ccc$SRoutcome), 
-                        margin = 1)
-  sum_table$PPV <- ppv_npv[str_detect(row.names(ppv_npv), "1"), 
-                           str_detect(colnames(ppv_npv), "1")]
-  sum_table$NPV <- ppv_npv[str_detect(row.names(ppv_npv), "0"),
-                           str_detect(colnames(ppv_npv), "0")]
-  accuracy_table <- table(SR_SRout_ccc$cut_threshold, 
-                          SR_SRout_ccc$SRoutcome)
-  sum_table$Accuracy <- (accuracy_table[str_detect(row.names(accuracy_table), "1"), 
-                                str_detect(colnames(accuracy_table), "1")] + 
-                           accuracy_table[str_detect(row.names(accuracy_table), "0"), 
-                                          str_detect(colnames(accuracy_table), "0")])/nrow(SR_SRout_ccc)
-  sum_table$n <- nrow(SR_SRout_ccc)
-  auc_ci <-roc_model[["ci"]]
-  sum_table$ROC_AUC <- paste0(round(roc_model$auc,3),
-                              " (", round(auc_ci[1],3), "; ",
-                              round(auc_ci[3],3), ")")
-  sum_table$ROC <- roc_model$auc
-  
-  `tables/Table2_cont` <- full_join(`tables/Table2_cont`, sum_table)
-  write_xlsx(`tables/Table2_cont`, "tables/Table2_cont.xlsx")
-###ii) Univariate on categorical features --------------------------------------------------
-SR_SRout_ccc <- SR_SRout_ccc %>%
+SR_m12_data %>%
+  group_by(bmi_cat) %>%
+  summarise(
+    min = min(bmi_model),
+    max = max(bmi_model),
+    n = n()
+  )
+SR_m12_data %>%
+  group_by(hba1c_diag) %>%
+  summarise(
+    min = min(HbA1c_at_diagnosis_v1),
+    max = max(HbA1c_at_diagnosis_v1),
+    n = n()
+  )
+quantile(SR_m12_data$HbA1c_at_diagnosis_v1, probs = seq(0, 1, by = 0.1), na.rm = TRUE)
+###Model 1  --------------------------------------------------------------------------
+SR_mD_data <- SR_m12_data %>%
+  select(Study_ID, SRoutcome, robust_outcome, AgeatDiagnosis, bmi_model,
+         HbA1c_at_diagnosis_v1, Gender_v1,
+         osmotic, autoimmune, Unintentional_weight_loss_v1, DKA,
+         famhisnoninsdiab, num_anti) %>%
   mutate(
-    Gender_v1 = ifelse(Gender_v1 == "Female", 1, 0),
-    DKA = as.numeric(DKA),
-    Unintentional_weight_loss_v1 = ifelse(Unintentional_weight_loss_v1 == "Yes", 1, 0),
-    autoimmune = as.numeric(autoimmune),
-    osmotic = as.numeric(osmotic),
-    famhisdiab = ifelse(famhisdiab == "No", 1, 0),
-    famhisnoninsdiab = ifelse(famhisnoninsdiab == "No", 1, 0),
-    famhisauto = as.numeric(famhisauto)
+    m1_pp = predict(m1, SR_m12_data, type = "response"),
+    agedx = case_when(
+      AgeatDiagnosis <=24 ~ 3,
+      AgeatDiagnosis <=34 ~ 2,
+      AgeatDiagnosis <=44 ~ 1,
+      AgeatDiagnosis >44 ~ 0
+    ),
+    bmi = case_when(
+      bmi_model < 25 ~ 5,
+      bmi_model < 35 ~ 3,
+      bmi_model >= 35 ~ 0
+    ),
+    hba1c = case_when(
+      HbA1c_at_diagnosis_v1 < 58 ~ 0,
+      HbA1c_at_diagnosis_v1 >= 58 ~ 1
+    ),
+    sex = ifelse(Gender_v1 == "Female", 1, 0),
+    osmo = ifelse(osmotic == "1", 1, 0),
+    auto = ifelse(autoimmune == "1", 1, 0),
+    weightloss = ifelse(Unintentional_weight_loss_v1 == "Yes", 1, 0),
+    dka = ifelse(DKA == "1", 1, 0),
+    pardm = ifelse(famhisnoninsdiab == "No", 1, 0),
+    pos_anti = ifelse(num_anti >= 1, 1, 0),
+    anti_cat = ifelse(num_anti == 0, "0", ifelse(num_anti == 1, "1", "2+"))
   )
-table(SR_SRout_ccc$Gender_v1, useNA = "ifany")
-table(SR_SRout_ccc$DKA, useNA = "ifany")
-table(SR_SRout_ccc$Unintentional_weight_loss_v1, useNA = "ifany")
-table(SR_SRout_ccc$autoimmune, useNA = "ifany")
-table(SR_SRout_ccc$osmotic, useNA = "ifany")
-table(SR_SRout_ccc$famhisdiab, useNA = "ifany")
-table(SR_SRout_ccc$famhisnoninsdiab, useNA = "ifany")
-table(SR_SRout_ccc$famhisauto, useNA = "ifany")
-cat_contingency(varlist_cat, 
-                dataset = SR_SRout_ccc, 
-                outcome = "SRoutcome", 
-                saving_name = "tables/Table2_cat",
-                complete_case = TRUE, 
-                plots = FALSE, 
-                decimals = 3)
 
-# top left (specificity) and bottom right (sensitivity)
-#prop.table(table(SR_SRout_ccc$Acanthosis_Nigricans_v1, SR_SRout_ccc$SRoutcome), margin = 2)
-# top left (NPV) and bottom right (PPV)
-#prop.table(table(SR_SRout_ccc$Acanthosis_Nigricans_v1, SR_SRout_ccc$SRoutcome), margin = 1)
+SR_mD_data <- SR_mD_data %>%
+  select(Study_ID, SRoutcome, robust_outcome, m1_pp, agedx, bmi, hba1c, sex,
+         osmo, auto, weightloss, dka, pardm, pos_anti, anti_cat) %>%
+  mutate(ScoreD = select(., agedx:pardm) %>% rowSums(na.rm = TRUE))
+
+SR_mD_data <- SR_mD_data %>%
+  mutate(
+    SR_score_cat1 = case_when(
+      ScoreD <= 5 ~ "0-5",
+      ScoreD <= 11 ~ "6-11",
+      ScoreD > 11 ~ "11-14"
+    ),
+    SR_score_cat2 = case_when(
+      ScoreD < 6 ~ "0-6",
+      ScoreD <= 11 ~ "7-11",
+      ScoreD > 11 ~ "12-14"
+    ))
+varlist = c("ScoreD")
 
 
+m1 <- glm(SRoutcome ~ relevel(agediag, ref = ">=45") +
+            relevel(bmi_cat, ref = ">=35") +
+            relevel(hba1c_diag, ref = "<58") +
+            #scale(c_peptide_v1) +
+            relevel(factor(Gender_v1), ref = "Male") +
+            osmotic +
+            autoimmune +
+            Unintentional_weight_loss_v1 +
+            DKA +
+            #relevel(factor(Eth_4cat), ref = "White") +
+            relevel(factor(ethnicity), ref = "White") +
+            relevel(factor(famhisnoninsdiab),ref = "Yes"),
+          #famhisauto,
+          data = SR_m12_data,
+          family = binomial)
+# model_info(model = m2,
+#            test_data = SR_m12_data,
+#            outcome = "SRoutcome",
+#            saving_name = "03_04_sm2",
+#            manual_plotting = TRUE,
+#            manual_plot_name = "m2",
+#            decimals = 5)
+model_info(model = m1,
+           test_data = SR_m12_data,
+           outcome = "SRoutcome",
+           saving_name = "03_04_sm1",
+           manual_plotting = TRUE,
+           manual_plot_name = "m1",
+           decimals = 5)
+coef_table_m1 <- coefs_m1 %>%
+  mutate(coef = estimate,
+         SCORE = round(coef)) %>%
+  dplyr::select(variable, coef, OR, p_value, SCORE) %>%
+  rename(`Model Feature` = variable,
+         `Model 1 B coefficient` = coef,
+         `Model 1 OR` = OR,
+         `Model 1 p value` = p_value,
+         `Model 1 Score` = SCORE
+  )
+# coef_table_m2 <- coefs_m2 %>%
+#   mutate(coef = estimate,
+#          SCORE = round(coef)) %>%
+#   dplyr::select(variable, coef, OR, p_value, SCORE) %>%
+#   rename(`Model Feature` = variable,
+#          `Model 2 B coefficient` = coef,
+#          `Model 2 OR` = OR,
+#          `Model 2 p value` = p_value,
+#          `Model 2 Score` = SCORE
+#   )
+#coef_table <- left_join(coef_table_m1, coef_table_m1)
+write_xlsx(coef_table_m1,"tables/Table2.xlsx")

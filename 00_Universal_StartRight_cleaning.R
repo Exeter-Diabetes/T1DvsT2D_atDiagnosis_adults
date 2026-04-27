@@ -20,6 +20,8 @@ SR_v3 <- read_xlsx("C:/Users/jk704/University of Exeter/StartRight/OneDrive_1_26
 SR_v4 <- read_xlsx("~/StartRight/2024/2024Sept24 StartRight Visit 4 Updated Data.xlsx")
 #READ IN LIPIDS FOR V1
 SR_lipids <- read_xlsx("data/SR Lipids Batch Analysis 2024 with Pt ID .xlsx")
+#read in adiponectin data
+adi <- read_xlsx("data/C25-134 CBAL 25.016 Sample Manifest - Exeter StartRight Plasma 27.11.25.xlsx")
 #Read in additional data
 #SRdka <- read_excel("data/data for J DKA excell.xls")
 grs <- read_excel("data/data for J excell.xls")
@@ -75,8 +77,8 @@ tcf7l2 <- tcf7l2 %>%
   filter(Cohort == "Start_Right")
 GRS3 <- full_join(GRS, tcf7l2, by = c("n_eid" = "labno"))
 
-GRS2 <- GRS %>% 
-  group_by(n_eid) %>% 
+GRS2 <- GRS %>%
+  group_by(n_eid) %>%
   mutate(id_count=n())
 dups <- GRS2 %>% filter(id_count==2)
 write_xlsx(dups,"duplicated_T2DGRS.xlsx")
@@ -85,24 +87,24 @@ GRS1 <- GRS3 %>%
 GRS %>%
   filter(StartRightID == "SR0852")
 
-SR <- left_join(SRdata, SRt2dgrs[ , c("startrightid", 
-                                      "t2dgrsstdmvpta", 
-                                      "grst2dtamvpall_tp", 
-                                      "ancestry")], 
+SR <- left_join(SRdata, SRt2dgrs[ , c("startrightid",
+                                      "t2dgrsstdmvpta",
+                                      "grst2dtamvpall_tp",
+                                      "ancestry")],
                 by = c("StartRight_Study_ID_v1" = "startrightid"))
-SR <- left_join(SR, GRS1[ , c("StartRightID", 
-                              "t1d_grs", 
-                              "SCORE", 
-                              "T2DGRS", 
-                              "T2DGRSperAllele", 
-                              "T2DGRSzScore", 
+SR <- left_join(SR, GRS1[ , c("StartRightID",
+                              "t1d_grs",
+                              "SCORE",
+                              "T2DGRS",
+                              "T2DGRSperAllele",
+                              "T2DGRSzScore",
                               "chr10:112994329",
-                              "chr10:112996282", 
-                              "chr10:112998590", 
-                              "chr10:113047288", 
-                              "chr10:113049143", 
-                              "Ancestry", 
-                              "rawt2dsuzuki24", 
+                              "chr10:112996282",
+                              "chr10:112998590",
+                              "chr10:113047288",
+                              "chr10:113049143",
+                              "Ancestry",
+                              "rawt2dsuzuki24",
                               "t2d_liverlipid_hc",
                               "t2d_metabolicsyn_hc",
                               "t2d_obesity_hc",
@@ -122,7 +124,7 @@ SR <- left_join(SR, GRS1[ , c("StartRightID",
                               "t2d_liverlipid_sc",
                               "t2d_obesity_sc",
                               "t2d_proins_sc",
-                              "t2d_shbglpa_sc")], 
+                              "t2d_shbglpa_sc")],
                 by = c("StartRight_Study_ID_v1" = "StartRightID"))
 
 
@@ -130,9 +132,9 @@ SR <- left_join(SR, GRS1[ , c("StartRightID",
 SR <- SR[-474,]
 #SR <- left_join(SR, SRdka, by = c("StartRight_Study_ID_v1" = "StartRightID"))
 
-SR <- left_join(SR, SR_lipids[ , c("Patient Code", 
-                                   "CHOL (mmol/L)", 
-                                   "HDL (mmol/L)")], 
+SR <- left_join(SR, SR_lipids[ , c("Patient Code",
+                                   "CHOL (mmol/L)",
+                                   "HDL (mmol/L)")],
                 by = c("StartRight_Study_ID_v1" = "Patient Code"))
 
 SR_lipid_check <- SR_lipids %>%
@@ -144,38 +146,38 @@ SR %>%
   select(StartRight_Study_ID_v1, Cholestrol_v1, HDL_v1)
 
 SR <- SR %>%
-  mutate(Cholestrol_mmol_L_v1 = ifelse(!is.na(Cholestrol_v1), 
-                                       Cholestrol_v1, 
-                                       ifelse(`CHOL (mmol/L)` == "Insufficient Volume" 
-                                              | `CHOL (mmol/L)` == "Haemolysed", 
-                                              NA, 
+  mutate(Cholestrol_mmol_L_v1 = ifelse(!is.na(Cholestrol_v1),
+                                       Cholestrol_v1,
+                                       ifelse(`CHOL (mmol/L)` == "Insufficient Volume"
+                                              | `CHOL (mmol/L)` == "Haemolysed",
+                                              NA,
                                               `CHOL (mmol/L)`)),
-         HDL_mmol_L_v1 = ifelse(!is.na(HDL_v1), 
-                                HDL_v1, 
-                                ifelse(`HDL (mmol/L)` == "Insufficient Volume" 
-                                       | `HDL (mmol/L)` == "Haemolysed", 
-                                       NA, 
+         HDL_mmol_L_v1 = ifelse(!is.na(HDL_v1),
+                                HDL_v1,
+                                ifelse(`HDL (mmol/L)` == "Insufficient Volume"
+                                       | `HDL (mmol/L)` == "Haemolysed",
+                                       NA,
                                        `HDL (mmol/L)`)))
 
 SR$Cholestrol_mmol_L_v1 <- as.numeric(SR$Cholestrol_mmol_L_v1)
 SR$HDL_mmol_L_v1 <- as.numeric(SR$HDL_mmol_L_v1)
 
-SR_dup <- SR %>% 
-  group_by(StartRight_Study_ID_v1) %>% 
+SR_dup <- SR %>%
+  group_by(StartRight_Study_ID_v1) %>%
   mutate(id_count=n())
-dups <- SR_dup %>% 
+dups <- SR_dup %>%
   filter(id_count==2) %>%
   select(StartRight_Study_ID_v1,
-         id_count, 
-         `CHOL (mmol/L)`, 
-         Cholestrol_mmol_L_v1, 
-         `HDL (mmol/L)`, 
+         id_count,
+         `CHOL (mmol/L)`,
+         Cholestrol_mmol_L_v1,
+         `HDL (mmol/L)`,
          HDL_mmol_L_v1)
 
 #These lines are from delayed samples and need to be removed
 #For IDs SR0372, SR0431, SR1808, SR2618
 dups <- dups[-c(2, 3, 10, 11), ]
-#This one is mislabelled and actually belongs to SR0076, which has been added 
+#This one is mislabelled and actually belongs to SR0076, which has been added
 #and merged in
 dups <- dups[-5, ]
 
@@ -217,7 +219,7 @@ SR %>%
 SR <- SR %>%
   distinct(StartRight_Study_ID_v1, .keep_all = TRUE) %>%
   select(-hdl, -chol)
-# 
+#
 # aggregate(SR$`CHOL (mmol/L)`,
 #           by=list(StartRight_Study_ID_v1=SR$StartRight_Study_ID_v1,
 #                   etc1=SR$etc1,
@@ -225,20 +227,68 @@ SR <- SR %>%
 #           data=SR,
 #           FUN=mean)
 
-SR <- left_join(SR, GRS_standardised, 
+SR <- left_join(SR, GRS_standardised,
                 by = c("StartRight_Study_ID_v1" = "Study_ID"))
 
-SR %>% 
-  group_by(StartRight_Study_ID_v1) %>% 
+SR %>%
+  group_by(StartRight_Study_ID_v1) %>%
   mutate(id_count=n()) %>%
   filter(id_count==2) %>%
   select(StartRight_Study_ID_v1,
-         id_count, 
+         id_count,
          T2DGRS_suzuki24_z,
          T1DGRS2_z
   )
 SR <- SR %>%
   distinct(StartRight_Study_ID_v1, .keep_all = TRUE)
+
+#Add in adipoenectin
+adi <- adi %>%
+  mutate(`Adiponectin_ug/mL` = ifelse(`Adiponectin_ug/mL` == "<0.3", "0.29", `Adiponectin_ug/mL`))
+adi$`Adiponectin_ug/mL` <- as.numeric(adi$`Adiponectin_ug/mL`)
+adi_dups <- adi %>%
+  group_by(`Participant Code`) %>%
+  mutate(id_count=n()) %>%
+  filter(id_count==2) %>%
+  select(`Run ID`,`Sample no.`, `Participant Code`, `Scanned 2D Tube Code`, `Adiponectin_ug/mL`, AnalysisDate)
+
+
+
+adi_dups_mean <- aggregate(adi_dups$`Adiponectin_ug/mL`,
+                       by=list(`Participant Code`=adi_dups$`Participant Code`),
+                       data=adi_dups,
+                       FUN=mean) %>%
+  rename(adi = x)
+
+adi <- adi %>%
+  left_join(adi_dups_mean) %>%
+  mutate(adiponectin_ug_mL_v1 = ifelse(`Participant Code` %in% adi_dups$`Participant Code`, adi, `Adiponectin_ug/mL`)) %>%
+  rename(
+    adiponectin_analysis_date = AnalysisDate
+  )
+adi %>%
+  group_by(`Participant Code`) %>%
+  mutate(id_count=n()) %>%
+  filter(id_count==2) %>%
+  select(`Run ID`,`Sample no.`, `Participant Code`, `Scanned 2D Tube Code`, `Adiponectin_ug/mL`,adiponectin_ug_mL_v1, adiponectin_analysis_date)
+SR <- left_join(SR, adi[ , c("Participant Code",
+                             "adiponectin_ug_mL_v1",
+                             "adiponectin_analysis_date")],
+                by = c("StartRight_Study_ID_v1" = "Participant Code"))
+SR %>%
+  filter(!(StartRight_Study_ID_v1 %in% SR$StartRight_Study_ID_v1)) %>%
+  select(StartRight_Study_ID_v1, adiponectin_ug_mL_v1)
+
+SR %>%
+  group_by(StartRight_Study_ID_v1) %>%
+  mutate(id_count=n()) %>%
+  filter(id_count==2) %>%
+  #filter(!(StartRight_Study_ID_v1 %in% SR$StartRight_Study_ID_v1)) %>%
+  select(StartRight_Study_ID_v1, adiponectin_ug_mL_v1)
+
+SR <- SR %>%
+  distinct(StartRight_Study_ID_v1, .keep_all = TRUE)
+#Save file
 save(SR, file = "SR_15_1_25.RData")
 write_xlsx(SR,"SR_15_1_25.xlsx")
 
@@ -273,13 +323,13 @@ SR <- SR %>%
     urine_cpeptide_v3 = `V3 Urine C-Peptide_v3`,
     UCPCR_v3 = `V3 UCPCR_v3`,
     #days_urine_in_transit_v3 = `Days Urine In Transit_v3`,
-    #DKA = studyDKA, 
-    T1DGRS1 = t1d_grs, 
+    #DKA = studyDKA,
+    T1DGRS1 = t1d_grs,
     T1DGRS2 = SCORE,
-    rs7901695 = `chr10:112994329`, 
+    rs7901695 = `chr10:112994329`,
     rs4506565 = `chr10:112996282`,
-    rs7903146 = `chr10:112998590`, 
-    rs11196205 = `chr10:113047288`, 
+    rs7903146 = `chr10:112998590`,
+    rs11196205 = `chr10:113047288`,
     rs12255372 = `chr10:113049143`,
     T2DGRS_suzuki24 = rawt2dsuzuki24,
     T2DGRSstd_vujkovic20 = t2dgrsstdmvpta,
@@ -291,7 +341,7 @@ SR <- SR %>%
 
 #Fix consistency issues/spell check etc -------------------------------------------------
 SR <- SR %>%
-  mutate(recruitment_site_v1 = ifelse(recruitment_site_v1 == "CHES", 
+  mutate(recruitment_site_v1 = ifelse(recruitment_site_v1 == "CHES",
                                       "Chester",
                                       ifelse(recruitment_site_v1 == "EXET",
                                              "Exeter",
@@ -303,94 +353,94 @@ SR <- SR %>%
                                                                   "Sheffield",
                                                                   recruitment_site_v1))))))
 SR <- SR %>%
-  mutate(clinical_diagnosis_v1 = ifelse(clinical_diagnosis_v1 == "Type2", 
-                                        "Type 2", 
+  mutate(clinical_diagnosis_v1 = ifelse(clinical_diagnosis_v1 == "Type2",
+                                        "Type 2",
                                         clinical_diagnosis_v1))
 SR <- SR %>%
-  mutate(SU_Type_v1 = ifelse(SU_Type_v1 == "GIICLAZIDE" | SU_Type_v1 == "GLICAZIDE" |SU_Type_v1 == "GLICLAZIDE MODIFIED RELEASE" |SU_Type_v1 == "GLICLAZIDE." |SU_Type_v1 == "GLICLAZIDE. Z ,CLE" |SU_Type_v1 == "GLICLIZIDE" |SU_Type_v1 == "LICLAZIDE", 
-                             "GLICLAZIDE", 
+  mutate(SU_Type_v1 = ifelse(SU_Type_v1 == "GIICLAZIDE" | SU_Type_v1 == "GLICAZIDE" |SU_Type_v1 == "GLICLAZIDE MODIFIED RELEASE" |SU_Type_v1 == "GLICLAZIDE." |SU_Type_v1 == "GLICLAZIDE. Z ,CLE" |SU_Type_v1 == "GLICLIZIDE" |SU_Type_v1 == "LICLAZIDE",
+                             "GLICLAZIDE",
                              SU_Type_v1))
 SR <- SR %>%
-  mutate(Glitazone_v1 = ifelse(Glitazone_v1 == "NO", 
-                               "No", 
+  mutate(Glitazone_v1 = ifelse(Glitazone_v1 == "NO",
+                               "No",
                                Glitazone_v1))
 SR <- SR %>%
-  mutate(DPP4_Type_v1 = ifelse(DPP4_Type_v1 == "ALOALPTIN" | DPP4_Type_v1 == "ALOGLIPTIN ." | DPP4_Type_v1 == "ALOGLIPTIN1 NH N" | DPP4_Type_v1 == "ALOGLIPTIN52--", 
-                               "ALOGLIPTIN", 
+  mutate(DPP4_Type_v1 = ifelse(DPP4_Type_v1 == "ALOALPTIN" | DPP4_Type_v1 == "ALOGLIPTIN ." | DPP4_Type_v1 == "ALOGLIPTIN1 NH N" | DPP4_Type_v1 == "ALOGLIPTIN52--",
+                               "ALOGLIPTIN",
                                ifelse(DPP4_Type_v1 == "LINAFLIPTIN" | DPP4_Type_v1 == "LINGALIPTIN" ,
                                       "LINAGLIPTIN",
                                       DPP4_Type_v1)))
 SR <- SR %>%
-  mutate(SGLT2_Type_v1 = ifelse(SGLT2_Type_v1 == "DAPAGLIFOZIN" | SGLT2_Type_v1 == "DAPAGUFLOZN" | SGLT2_Type_v1 == "DAPGLIFLOZIN", 
-                                "DAPAGLIFLOZIN", 
+  mutate(SGLT2_Type_v1 = ifelse(SGLT2_Type_v1 == "DAPAGLIFOZIN" | SGLT2_Type_v1 == "DAPAGUFLOZN" | SGLT2_Type_v1 == "DAPGLIFLOZIN",
+                                "DAPAGLIFLOZIN",
                                 ifelse(SGLT2_Type_v1 == "EMPAGLIHOZIN",
                                        "EMPAGLIFLOZIN",
                                        SGLT2_Type_v1)))
 
 SR <- SR %>%
-  mutate(Diagnosed_Ketoacidosis_v1 = ifelse(Diagnosed_Ketoacidosis_v1 == "N/K", 
-                                            "NK", 
+  mutate(Diagnosed_Ketoacidosis_v1 = ifelse(Diagnosed_Ketoacidosis_v1 == "N/K",
+                                            "NK",
                                             Diagnosed_Ketoacidosis_v1))
 SR <- SR %>%
-  mutate(Acanthosis_Nigricans_v1 = ifelse(Acanthosis_Nigricans_v1 == "?", 
-                                          "No", 
+  mutate(Acanthosis_Nigricans_v1 = ifelse(Acanthosis_Nigricans_v1 == "?",
+                                          "No",
                                           Acanthosis_Nigricans_v1))
 #hypertension
 #smoker
 #Ex-Smoker -> Ex-smoker
 SR <- SR %>%
-  mutate(Smoker_v1 = ifelse(Smoker_v1 == "Ex-Smoker", 
-                            "Ex-smoker", 
+  mutate(Smoker_v1 = ifelse(Smoker_v1 == "Ex-Smoker",
+                            "Ex-smoker",
                             Smoker_v1))
 SR <- SR %>%
-  mutate(Fasting_Hba1c_diag_v1 = ifelse(Fasting_Hba1c_diag_v1 == "YES", 
-                                        "Yes", 
+  mutate(Fasting_Hba1c_diag_v1 = ifelse(Fasting_Hba1c_diag_v1 == "YES",
+                                        "Yes",
                                         Fasting_Hba1c_diag_v1))
 SR <- SR %>%
-  mutate(Fasting_glucose_diag_v1 = ifelse(Fasting_glucose_diag_v1 == "YES", 
-                                          "Yes", 
+  mutate(Fasting_glucose_diag_v1 = ifelse(Fasting_glucose_diag_v1 == "YES",
+                                          "Yes",
                                           Fasting_glucose_diag_v1))
 SR <- SR %>%
-  mutate(Fasting_triglycerides_diag_v1 = ifelse(Fasting_triglycerides_diag_v1 == "K/K", 
-                                                "N/K", 
+  mutate(Fasting_triglycerides_diag_v1 = ifelse(Fasting_triglycerides_diag_v1 == "K/K",
+                                                "N/K",
                                                 Fasting_triglycerides_diag_v1))
 SR <- SR %>%
-  mutate(pH_less_than_7_3_at_diag_v1 = ifelse(pH_less_than_7_3_at_diag_v1 == "Not Tested", 
-                                              "Not tested", 
+  mutate(pH_less_than_7_3_at_diag_v1 = ifelse(pH_less_than_7_3_at_diag_v1 == "Not Tested",
+                                              "Not tested",
                                               pH_less_than_7_3_at_diag_v1))
 SR <- SR %>%
-  mutate(Bld_ketones_not_tested_at_diag_v1 = ifelse(Bld_ketones_not_tested_at_diag_v1 == "Not tested", 
-                                                    "Not Tested", 
+  mutate(Bld_ketones_not_tested_at_diag_v1 = ifelse(Bld_ketones_not_tested_at_diag_v1 == "Not tested",
+                                                    "Not Tested",
                                                     Bld_ketones_not_tested_at_diag_v1))
 #father ins treated
 #Nk -> NK
 SR <- SR %>%
-  mutate(Father_insulin_treated_v1 = ifelse(Father_insulin_treated_v1 == "Nk", 
-                                            "NK", 
+  mutate(Father_insulin_treated_v1 = ifelse(Father_insulin_treated_v1 == "Nk",
+                                            "NK",
                                             Father_insulin_treated_v1))
 SR <- SR %>%
-  mutate(Pregnant_v2 = ifelse(Pregnant_v2 == "Don't Know", 
-                              "Don’t Know", 
+  mutate(Pregnant_v2 = ifelse(Pregnant_v2 == "Don't Know",
+                              "Don’t Know",
                               Pregnant_v2))
 SR <- SR %>%
-  mutate(SU_v2 = ifelse(SU_v2 == "YES", 
-                        "Yes", 
+  mutate(SU_v2 = ifelse(SU_v2 == "YES",
+                        "Yes",
                         SU_v2))
 SR <- SR %>%
-  mutate(SU_Type_v2 = ifelse(SU_Type_v2 == "GLICAZIDE" | SU_Type_v2 == "GLICIAZIDE" |SU_Type_v2 == "Gliclazide" |SU_Type_v2 == "GLICLAZIDE (ZICRON)" |SU_Type_v2 == "GLICLAZIDE MODIFIED RELEASE" |SU_Type_v2 == "GLIDAZIDE", 
-                             "GLICLAZIDE", 
+  mutate(SU_Type_v2 = ifelse(SU_Type_v2 == "GLICAZIDE" | SU_Type_v2 == "GLICIAZIDE" |SU_Type_v2 == "Gliclazide" |SU_Type_v2 == "GLICLAZIDE (ZICRON)" |SU_Type_v2 == "GLICLAZIDE MODIFIED RELEASE" |SU_Type_v2 == "GLIDAZIDE",
+                             "GLICLAZIDE",
                              SU_Type_v2))
 SR <- SR %>%
-  mutate(Glitazone_v2 = ifelse(Glitazone_v2 == "NO", 
-                               "No", 
+  mutate(Glitazone_v2 = ifelse(Glitazone_v2 == "NO",
+                               "No",
                                Glitazone_v2))
 SR <- SR %>%
-  mutate(DPP4i_v2 = ifelse(DPP4i_v2 == "NO", 
-                           "No", 
+  mutate(DPP4i_v2 = ifelse(DPP4i_v2 == "NO",
+                           "No",
                            DPP4i_v2))
 SR <- SR %>%
-  mutate(DPP4_Type_v2 = ifelse(DPP4_Type_v2 == "ALGOLIPTIN" | DPP4_Type_v2 == "ALOGIPTIN" | DPP4_Type_v2 == "ALOGLPTIN" | DPP4_Type_v2 == "ALOGLYPTIN", 
-                               "ALOGLIPTIN", 
+  mutate(DPP4_Type_v2 = ifelse(DPP4_Type_v2 == "ALGOLIPTIN" | DPP4_Type_v2 == "ALOGIPTIN" | DPP4_Type_v2 == "ALOGLPTIN" | DPP4_Type_v2 == "ALOGLYPTIN",
+                               "ALOGLIPTIN",
                                ifelse(DPP4_Type_v2 == "LINALIPTIN" ,
                                       "LINAGLIPTIN",
                                       ifelse(DPP4_Type_v2 == "SAXAGLIPTIN (ONGLYZA)",
@@ -399,100 +449,100 @@ SR <- SR %>%
                                                     "SITAGLIPTIN",
                                                     DPP4_Type_v2)))))
 SR <- SR %>%
-  mutate(GLP1_v2 = ifelse(GLP1_v2 == "NO", 
-                          "No", 
+  mutate(GLP1_v2 = ifelse(GLP1_v2 == "NO",
+                          "No",
                           ifelse(GLP1_v2 == "YES",
                                  "Yes",
                                  GLP1_v2)))
 SR <- SR %>%
-  mutate(SGLT2_v2 = ifelse(SGLT2_v2 == "YES", 
-                           "Yes", 
+  mutate(SGLT2_v2 = ifelse(SGLT2_v2 == "YES",
+                           "Yes",
                            SGLT2_v2))
 SR <- SR %>%
-  mutate(Other_non_insulin_v2 = ifelse(Other_non_insulin_v2 == "NO", 
-                                       "No", 
+  mutate(Other_non_insulin_v2 = ifelse(Other_non_insulin_v2 == "NO",
+                                       "No",
                                        Other_non_insulin_v2))
 SR <- SR %>%
-  mutate(Admission_Reason_1_v2 = ifelse(Admission_Reason_1_v2 == "Ketacidosis", 
-                                        "Ketoacidosis", 
+  mutate(Admission_Reason_1_v2 = ifelse(Admission_Reason_1_v2 == "Ketacidosis",
+                                        "Ketoacidosis",
                                         Admission_Reason_1_v2))
 SR <- SR %>%
-  mutate(Admission_Reason_2_v2 = ifelse(Admission_Reason_2_v2 == "Ketacidosis", 
-                                        "Ketoacidosis", 
+  mutate(Admission_Reason_2_v2 = ifelse(Admission_Reason_2_v2 == "Ketacidosis",
+                                        "Ketoacidosis",
                                         Admission_Reason_2_v2))
 SR <- SR %>%
-  mutate(Admission_Reason_3_v2 = ifelse(Admission_Reason_3_v2 == "Ketacidosis", 
-                                        "Ketoacidosis", 
+  mutate(Admission_Reason_3_v2 = ifelse(Admission_Reason_3_v2 == "Ketacidosis",
+                                        "Ketoacidosis",
                                         Admission_Reason_3_v2))
 SR <- SR %>%
-  mutate(Participant_Continuation_v3 = ifelse(Participant_Continuation_v3 == "YES", 
-                                              "Yes", 
+  mutate(Participant_Continuation_v3 = ifelse(Participant_Continuation_v3 == "YES",
+                                              "Yes",
                                               Participant_Continuation_v3))
 SR <- SR %>%
-  mutate(GP_Nurse_v3 = ifelse(GP_Nurse_v3 == "YES", 
-                              "Yes", 
+  mutate(GP_Nurse_v3 = ifelse(GP_Nurse_v3 == "YES",
+                              "Yes",
                               GP_Nurse_v3))
 SR <- SR %>%
-  mutate(GP_Doctor_v3 = ifelse(GP_Doctor_v3 == "YES", 
-                               "Yes", 
+  mutate(GP_Doctor_v3 = ifelse(GP_Doctor_v3 == "YES",
+                               "Yes",
                                GP_Doctor_v3))
 SR <- SR %>%
-  mutate(Hospital_DSD_v3 = ifelse(Hospital_DSD_v3 == "NO", 
-                                  "No", 
+  mutate(Hospital_DSD_v3 = ifelse(Hospital_DSD_v3 == "NO",
+                                  "No",
                                   Hospital_DSD_v3))
 SR <- SR %>%
-  mutate(Hospital_DSN_v3 = ifelse(Hospital_DSN_v3 == "NO", 
-                                  "No", 
+  mutate(Hospital_DSN_v3 = ifelse(Hospital_DSN_v3 == "NO",
+                                  "No",
                                   Hospital_DSN_v3))
 SR <- SR %>%
-  mutate(Community_CDC_v3 = ifelse(Community_CDC_v3 == "NO", 
-                                   "No", 
+  mutate(Community_CDC_v3 = ifelse(Community_CDC_v3 == "NO",
+                                   "No",
                                    Community_CDC_v3))
 SR <- SR %>%
-  mutate(Community_CDN_v3 = ifelse(Community_CDN_v3 == "NO", 
-                                   "No", 
+  mutate(Community_CDN_v3 = ifelse(Community_CDN_v3 == "NO",
+                                   "No",
                                    Community_CDN_v3))
 SR <- SR %>%
-  mutate(Monitor_Blood_Glucose_v3 = ifelse(Monitor_Blood_Glucose_v3 == "YES", 
-                                           "Yes", 
+  mutate(Monitor_Blood_Glucose_v3 = ifelse(Monitor_Blood_Glucose_v3 == "YES",
+                                           "Yes",
                                            Monitor_Blood_Glucose_v3))
 SR <- SR %>%
-  mutate(Pregnant_v3 = ifelse(Pregnant_v3 == "NO", 
-                              "No", 
+  mutate(Pregnant_v3 = ifelse(Pregnant_v3 == "NO",
+                              "No",
                               Pregnant_v3))
 SR <- SR %>%
-  mutate(DIET_only_v3 = ifelse(DIET_only_v3 == "NO", 
-                               "No", 
+  mutate(DIET_only_v3 = ifelse(DIET_only_v3 == "NO",
+                               "No",
                                DIET_only_v3))
 SR <- SR %>%
-  mutate(MFN_v3 = ifelse(MFN_v3 == "YES", 
-                         "Yes", 
+  mutate(MFN_v3 = ifelse(MFN_v3 == "YES",
+                         "Yes",
                          MFN_v3))
 SR <- SR %>%
-  mutate(MFN_Type_v3 = ifelse(MFN_Type_v3 == "STANDARD", 
-                              "Standard", 
+  mutate(MFN_Type_v3 = ifelse(MFN_Type_v3 == "STANDARD",
+                              "Standard",
                               MFN_Type_v3))
 SR <- SR %>%
   mutate(SU_v3 = ifelse(SU_v3 == "NO",
                         "No",
                         SU_v3))
 SR <- SR %>%
-  mutate(SU_Type_v3 = ifelse(SU_Type_v3 == "G;ICLAZIDE" | SU_Type_v3 == "Gliclazide" |SU_Type_v3 == "GLICLAZIDE." |SU_Type_v3 == "GLICLAZINE", 
-                             "GLICLAZIDE", 
+  mutate(SU_Type_v3 = ifelse(SU_Type_v3 == "G;ICLAZIDE" | SU_Type_v3 == "Gliclazide" |SU_Type_v3 == "GLICLAZIDE." |SU_Type_v3 == "GLICLAZINE",
+                             "GLICLAZIDE",
                              ifelse(SU_Type_v3 == "GLIMEPINDE",
                                     "GLIMEPIRIDE",
                                     SU_Type_v3)))
 SR <- SR %>%
-  mutate(Glitazone_v3 = ifelse(Glitazone_v3 == "NO", 
-                               "No", 
+  mutate(Glitazone_v3 = ifelse(Glitazone_v3 == "NO",
+                               "No",
                                Glitazone_v3))
 SR <- SR %>%
   mutate(DPP4i_v3 = ifelse(DPP4i_v3 == "NO",
                            "No",
                            DPP4i_v3))
 SR <- SR %>%
-  mutate(DPP4_Type_v3 = ifelse(DPP4_Type_v3 == "ALAGLIPTIN" | DPP4_Type_v3 == "Alogliptin" | DPP4_Type_v3 == "ANAGLIPTIN" | DPP4_Type_v3 == "VIPIDIA (ALOGLIPTIN)", 
-                               "ALOGLIPTIN", 
+  mutate(DPP4_Type_v3 = ifelse(DPP4_Type_v3 == "ALAGLIPTIN" | DPP4_Type_v3 == "Alogliptin" | DPP4_Type_v3 == "ANAGLIPTIN" | DPP4_Type_v3 == "VIPIDIA (ALOGLIPTIN)",
+                               "ALOGLIPTIN",
                                ifelse(DPP4_Type_v3 == "Linagliptin" ,
                                       "LINAGLIPTIN",
                                       ifelse(DPP4_Type_v3 == "SAXOGLIPTIN",
@@ -511,24 +561,24 @@ SR <- SR %>%
                                        "No",
                                        Other_non_insulin_v3))
 SR <- SR %>%
-  mutate(Insulin_v3 = ifelse(Insulin_v3 == "NO", 
-                             "No", 
+  mutate(Insulin_v3 = ifelse(Insulin_v3 == "NO",
+                             "No",
                              Insulin_v3))
 SR <- SR %>%
-  mutate(Missed_Doses_v3 = ifelse(Missed_Doses_v3 == "YES", 
-                                  "Yes", 
+  mutate(Missed_Doses_v3 = ifelse(Missed_Doses_v3 == "YES",
+                                  "Yes",
                                   Missed_Doses_v3))
 SR <- SR %>%
-  mutate(Admitted_to_Hosp_v3 = ifelse(Admitted_to_Hosp_v3 == "NO", 
-                                      "No", 
+  mutate(Admitted_to_Hosp_v3 = ifelse(Admitted_to_Hosp_v3 == "NO",
+                                      "No",
                                       Admitted_to_Hosp_v3))
 SR <- SR %>%
-  mutate(Other_Medical_Conditions_v3 = ifelse(Other_Medical_Conditions_v3 == "NO", 
-                                              "No", 
+  mutate(Other_Medical_Conditions_v3 = ifelse(Other_Medical_Conditions_v3 == "NO",
+                                              "No",
                                               Other_Medical_Conditions_v3))
 SR <- SR %>%
-  mutate(Changes_to_Non_DM_Meds_v3 = ifelse(Changes_to_Non_DM_Meds_v3 == "NO", 
-                                            "No", 
+  mutate(Changes_to_Non_DM_Meds_v3 = ifelse(Changes_to_Non_DM_Meds_v3 == "NO",
+                                            "No",
                                             Changes_to_Non_DM_Meds_v3))
 SR <- SR %>%
   mutate(Other_Studies_v3 = ifelse(Other_Studies_v3 == "NO",
@@ -537,19 +587,19 @@ SR <- SR %>%
                                           "Yes",
                                           Other_Studies_v3)))
 SR <- SR %>%
-  mutate(Home_Urine_Collection_v3 = ifelse(Home_Urine_Collection_v3 == "YES", 
-                                           "Yes", 
+  mutate(Home_Urine_Collection_v3 = ifelse(Home_Urine_Collection_v3 == "YES",
+                                           "Yes",
                                            Home_Urine_Collection_v3))
 SR <- SR %>%
-  mutate(Hypo_Questionnaire_v3 = ifelse(Hypo_Questionnaire_v3 == "YES", 
-                                        "Yes", 
+  mutate(Hypo_Questionnaire_v3 = ifelse(Hypo_Questionnaire_v3 == "YES",
+                                        "Yes",
                                         Hypo_Questionnaire_v3))
 
 ##from visit 4
 #Insulin_v4 (no _> No)
 SR <- SR %>%
-  mutate(Insulin_v4 = ifelse(Insulin_v4 == "no", 
-                             "No", 
+  mutate(Insulin_v4 = ifelse(Insulin_v4 == "no",
+                             "No",
                              Insulin_v4))
 
 
@@ -565,7 +615,7 @@ SR <- SR %>%
 SR <- SR %>%
   mutate(Date_neoteryx_v4 = if_else(str_detect(Date_neoteryx_v4, "UTC"),
                                     as.Date(str_replace(Date_neoteryx_v4, "00:00:00 UTC", "")),
-                                    as.Date(Date_neoteryx_v4, "%d.%m.%y")), 
+                                    as.Date(Date_neoteryx_v4, "%d.%m.%y")),
          Date_urine_v4 = if_else(str_detect(Date_urine_v4, "UTC"),
                                  as.Date(str_replace(Date_urine_v4, "00:00:00 UTC", "")),
                                  as.Date(Date_urine_v4, "%d.%m.%y")),
@@ -581,7 +631,7 @@ SR <- SR %>%
 #Time_of_last_snack_and_drink_v4
 #Time_of_last_meal_v4
 SR <- SR %>%
-  mutate(Time_of_last_meal_v4 = hms::hms(days =Time_of_last_meal_v4), 
+  mutate(Time_of_last_meal_v4 = hms::hms(days =Time_of_last_meal_v4),
          Time_of_last_snack_and_drink_v4 = hms::hms(days = as.numeric(Time_of_last_snack_and_drink_v4)))
 SR <- SR %>%
   mutate_at("Time_of_last_meal_v4", str_replace, ".000000", "")
@@ -595,17 +645,17 @@ SR <- SR %>%
 #Capillary_glucose_time_v4
 SR <- SR %>%
   mutate(Capillary_glucose_time_v4 = ifelse(str_detect(Capillary_glucose_time_v4, "UTC"),
-                             Capillary_glucose_time_v4, 
+                             Capillary_glucose_time_v4,
                              format(times(as.numeric(Capillary_glucose_time_v4)))))
 
 SR <- SR %>%
   mutate(Capillary_glucose_time_v4 = ifelse(str_detect(Capillary_glucose_time_v4, "UTC"),
-                                            str_replace(Capillary_glucose_time_v4, "1900-01-00", "1899-12-31"), 
+                                            str_replace(Capillary_glucose_time_v4, "1900-01-00", "1899-12-31"),
                                             Capillary_glucose_time_v4))
 
 SR <- SR %>%
   mutate(Capillary_glucose_time_v4 = ifelse(str_detect(Capillary_glucose_time_v4, "UTC"),
-                                            str_replace(Capillary_glucose_time_v4, "UTC", ""), 
+                                            str_replace(Capillary_glucose_time_v4, "UTC", ""),
                                             paste0("1899-12-31 ",Capillary_glucose_time_v4)))
 #Time_urine_v4
 SR <- SR %>%
@@ -651,10 +701,10 @@ SR <- SR %>%
          dur_diab_wks_v2 = as.numeric(difftime(Date_Contacted_v2, date_of_diagnosis_v1,units = "weeks")),
          dur_diab_wks_v3 = as.numeric(difftime(Date_Contacted_v3, date_of_diagnosis_v1, units = "weeks")),
          dur_diab_wks_v4 = as.numeric(difftime(Visit_Date_v4, date_of_diagnosis_v1, units = "weeks")),
-         dur_diab_sample_wks_v4 = ifelse(is.na(DBS_date_received_v4), 
-                                         as.numeric(difftime(V4DateUrineCollect_v4, date_of_diagnosis_v1, units = "weeks")), 
+         dur_diab_sample_wks_v4 = ifelse(is.na(DBS_date_received_v4),
+                                         as.numeric(difftime(V4DateUrineCollect_v4, date_of_diagnosis_v1, units = "weeks")),
                                          as.numeric(difftime(DBS_date_received_v4, date_of_diagnosis_v1, units = "weeks"))),
-         dur_diab_sample_wks_v3 = ifelse(is.na(Date_form_completed_v3), 
+         dur_diab_sample_wks_v3 = ifelse(is.na(Date_form_completed_v3),
                                          as.numeric(difftime(V3DateUrineReceive_v3, date_of_diagnosis_v1, units = "weeks")),
                                          as.numeric(difftime(Date_form_completed_v3, date_of_diagnosis_v1, units = "weeks")))
   )
@@ -670,49 +720,49 @@ SR <- SR %>%
          dur_diab_sample_yr_v3 = dur_diab_sample_wks_v3/52.14)
 
 SR <- SR %>%
-  mutate(dur_date_form_v4 = (as.numeric(difftime(Date_form_completed_v4, date_of_diagnosis_v1, units = "weeks")))/52.14, 
+  mutate(dur_date_form_v4 = (as.numeric(difftime(Date_form_completed_v4, date_of_diagnosis_v1, units = "weeks")))/52.14,
          dur_visit_date_v4 = (as.numeric(difftime(Visit_Date_v4, date_of_diagnosis_v1, units = "weeks")))/52.14,
-         dur_date_urine_collect_v4 = (as.numeric(difftime(V4DateUrineCollect_v4, date_of_diagnosis_v1, units = "weeks")))/52.14, 
-         dur_date_research_serum_v4 = (as.numeric(difftime(Date_Research_Serum_collected_v4, date_of_diagnosis_v1, units = "weeks")))/52.14, 
-         dur_date_stored_plasma_v4 = (as.numeric(difftime(Date_Stored_Plasma_collected_v4, date_of_diagnosis_v1, units = "weeks")))/52.14, 
-         dur_dbs_date_collected_v4 = (as.numeric(difftime(DBS_date_collected_v4, date_of_diagnosis_v1, units = "weeks")))/52.14, 
+         dur_date_urine_collect_v4 = (as.numeric(difftime(V4DateUrineCollect_v4, date_of_diagnosis_v1, units = "weeks")))/52.14,
+         dur_date_research_serum_v4 = (as.numeric(difftime(Date_Research_Serum_collected_v4, date_of_diagnosis_v1, units = "weeks")))/52.14,
+         dur_date_stored_plasma_v4 = (as.numeric(difftime(Date_Stored_Plasma_collected_v4, date_of_diagnosis_v1, units = "weeks")))/52.14,
+         dur_dbs_date_collected_v4 = (as.numeric(difftime(DBS_date_collected_v4, date_of_diagnosis_v1, units = "weeks")))/52.14,
          dur_dbs_date_received_v4 = (as.numeric(difftime(DBS_date_received_v4, date_of_diagnosis_v1, units = "weeks")))/52.14
   )
 
 
 
 SR <- SR %>%
-  mutate(longest_date_name = ifelse(!is.na(dur_date_form_v4) & dur_date_form_v4 >= 2.86, 
+  mutate(longest_date_name = ifelse(!is.na(dur_date_form_v4) & dur_date_form_v4 >= 2.86,
                                     "Date_form_completed_v4",
-                                    ifelse(!is.na(dur_visit_date_v4) & dur_visit_date_v4 >= 2.86, 
+                                    ifelse(!is.na(dur_visit_date_v4) & dur_visit_date_v4 >= 2.86,
                                            "Visit_date_v4",
-                                           ifelse(!is.na(dur_date_urine_collect_v4) & dur_date_urine_collect_v4 >= 2.86, 
-                                                  "V4DateUrineCollect_v4", 
-                                                  ifelse(!is.na(dur_date_research_serum_v4) & dur_date_research_serum_v4 >= 2.86, 
-                                                         "Date_Research_Serum_collected_v4", 
-                                                         ifelse(!is.na(dur_date_stored_plasma_v4) & dur_date_stored_plasma_v4 >= 2.86, 
-                                                                "Date_Stored_Plasma_collected_v4", 
-                                                                ifelse(!is.na(dur_dbs_date_collected_v4) & dur_dbs_date_collected_v4 >= 2.86, 
-                                                                       "DBS_date_collected_v4", 
-                                                                       ifelse(!is.na(dur_dbs_date_received_v4) & dur_dbs_date_received_v4 >= 2.86, 
-                                                                              "DBS_date_received_v4", 
+                                           ifelse(!is.na(dur_date_urine_collect_v4) & dur_date_urine_collect_v4 >= 2.86,
+                                                  "V4DateUrineCollect_v4",
+                                                  ifelse(!is.na(dur_date_research_serum_v4) & dur_date_research_serum_v4 >= 2.86,
+                                                         "Date_Research_Serum_collected_v4",
+                                                         ifelse(!is.na(dur_date_stored_plasma_v4) & dur_date_stored_plasma_v4 >= 2.86,
+                                                                "Date_Stored_Plasma_collected_v4",
+                                                                ifelse(!is.na(dur_dbs_date_collected_v4) & dur_dbs_date_collected_v4 >= 2.86,
+                                                                       "DBS_date_collected_v4",
+                                                                       ifelse(!is.na(dur_dbs_date_received_v4) & dur_dbs_date_received_v4 >= 2.86,
+                                                                              "DBS_date_received_v4",
                                                                               "V4 date/duration missing"))))))))
 
 SR <- SR %>%
-  mutate(dur_diab_joined_v4 = ifelse(!is.na(dur_date_form_v4) & dur_date_form_v4 >= 2.86, 
+  mutate(dur_diab_joined_v4 = ifelse(!is.na(dur_date_form_v4) & dur_date_form_v4 >= 2.86,
                                      dur_date_form_v4,
-                                     ifelse(!is.na(dur_visit_date_v4) & dur_visit_date_v4 >= 2.86, 
+                                     ifelse(!is.na(dur_visit_date_v4) & dur_visit_date_v4 >= 2.86,
                                             dur_visit_date_v4,
-                                            ifelse(!is.na(dur_date_urine_collect_v4) & dur_date_urine_collect_v4 >= 2.86, 
-                                                   dur_date_urine_collect_v4, 
-                                                   ifelse(!is.na(dur_date_research_serum_v4) & dur_date_research_serum_v4 >= 2.86, 
-                                                          dur_date_research_serum_v4, 
-                                                          ifelse(!is.na(dur_date_stored_plasma_v4) & dur_date_stored_plasma_v4 >= 2.86, 
-                                                                 dur_date_stored_plasma_v4, 
-                                                                 ifelse(!is.na(dur_dbs_date_collected_v4) & dur_dbs_date_collected_v4 >= 2.86, 
-                                                                        dur_dbs_date_collected_v4, 
-                                                                        ifelse(!is.na(dur_dbs_date_received_v4) & dur_dbs_date_received_v4 >= 2.86, 
-                                                                               dur_dbs_date_received_v4, 
+                                            ifelse(!is.na(dur_date_urine_collect_v4) & dur_date_urine_collect_v4 >= 2.86,
+                                                   dur_date_urine_collect_v4,
+                                                   ifelse(!is.na(dur_date_research_serum_v4) & dur_date_research_serum_v4 >= 2.86,
+                                                          dur_date_research_serum_v4,
+                                                          ifelse(!is.na(dur_date_stored_plasma_v4) & dur_date_stored_plasma_v4 >= 2.86,
+                                                                 dur_date_stored_plasma_v4,
+                                                                 ifelse(!is.na(dur_dbs_date_collected_v4) & dur_dbs_date_collected_v4 >= 2.86,
+                                                                        dur_dbs_date_collected_v4,
+                                                                        ifelse(!is.na(dur_dbs_date_received_v4) & dur_dbs_date_received_v4 >= 2.86,
+                                                                               dur_dbs_date_received_v4,
                                                                                NA))))))))
 
 
@@ -761,18 +811,18 @@ table(SR$Father_diabetes_v1)
 
 SR <- SR %>%
   mutate(
-    famhisdiab = ifelse(Mother_diabetes_v1 == "Yes" | Father_diabetes_v1 == "Yes", 
-                        "Yes", 
+    famhisdiab = ifelse(Mother_diabetes_v1 == "Yes" | Father_diabetes_v1 == "Yes",
+                        "Yes",
                         "No"),
-    famhisinsdiab = ifelse((Mother_diabetes_v1 == "Yes" & 
-                              Mother_insulin_treated_v1 == "Yes") | 
-                             (Father_diabetes_v1 == "Yes" & 
-                                Father_insulin_treated_v1 == "Yes"), 
-                           "Yes", 
+    famhisinsdiab = ifelse((Mother_diabetes_v1 == "Yes" &
+                              Mother_insulin_treated_v1 == "Yes") |
+                             (Father_diabetes_v1 == "Yes" &
+                                Father_insulin_treated_v1 == "Yes"),
+                           "Yes",
                            "No"),
-    famhisnoninsdiab = ifelse((Mother_diabetes_v1 == "Yes" & 
-                                 Mother_insulin_treated_v1 == "No") | 
-                                (Father_diabetes_v1 == "Yes" & 
+    famhisnoninsdiab = ifelse((Mother_diabetes_v1 == "Yes" &
+                                 Mother_insulin_treated_v1 == "No") |
+                                (Father_diabetes_v1 == "Yes" &
                                    Father_insulin_treated_v1 == "No"),
                               "Yes",
                               "No")
@@ -781,29 +831,29 @@ SR <- SR %>%
 SR <- SR %>%
   mutate(
     obese = ifelse(bmi_calc_v1 >= 30, 1, 0),
-    c_obese = ifelse(Gender == "Female", 
-                     ifelse(Waist_v1 >= 88, "Yes", "No"), 
+    c_obese = ifelse(Gender == "Female",
+                     ifelse(Waist_v1 >= 88, "Yes", "No"),
                      ifelse(Waist_v1 >= 102, "Yes", "No"))
-    
+
   )
 # family history of autoimmune
 SR <- SR %>%
   mutate(
-    famhisauto = ifelse(Mother_Coeliac_v4 == "Yes" | 
-                          Mother_Viteligo_v4 == "Yes"| 
-                          Mother_Addisons_disease_v4 == "Yes" | 
-                          Mother_Overactive_Thyroid_v4 == "Yes" | 
-                          Mother_Underactive_Thyroid_v4 == "Yes" | 
-                          Mother_Pernicious_Anaemia_v4 == "Yes" | 
-                          Mother_Rheumatoid_Arthritis_v4 == "Yes" | 
-                          Father_Coeliac_v4 == "Yes" | 
-                          Father_Viteligo_v4 == "Yes"| 
-                          Father_Addisons_Disease_v4 == "Yes" | 
-                          Father_Overactive_Thyroid_v4 == "Yes" | 
-                          Father_Underactive_Thyroid_v4 == "Yes" | 
-                          Father_Pernicious_Anaemia_v4 == "Yes" | 
-                          Father_Rheumatoid_Arthritis_v4 == "Yes", 
-                        "1", 
+    famhisauto = ifelse(Mother_Coeliac_v4 == "Yes" |
+                          Mother_Viteligo_v4 == "Yes"|
+                          Mother_Addisons_disease_v4 == "Yes" |
+                          Mother_Overactive_Thyroid_v4 == "Yes" |
+                          Mother_Underactive_Thyroid_v4 == "Yes" |
+                          Mother_Pernicious_Anaemia_v4 == "Yes" |
+                          Mother_Rheumatoid_Arthritis_v4 == "Yes" |
+                          Father_Coeliac_v4 == "Yes" |
+                          Father_Viteligo_v4 == "Yes"|
+                          Father_Addisons_Disease_v4 == "Yes" |
+                          Father_Overactive_Thyroid_v4 == "Yes" |
+                          Father_Underactive_Thyroid_v4 == "Yes" |
+                          Father_Pernicious_Anaemia_v4 == "Yes" |
+                          Father_Rheumatoid_Arthritis_v4 == "Yes",
+                        "1",
                         "0" ))
 
 #autoimmune
@@ -811,23 +861,23 @@ SR <- SR %>%
   mutate(
     autoimmune = ifelse(
       (!is.na(Coeliac_v1) & Coeliac_v1 == "Yes") |
-        (!is.na(Viteligo_v1) & Viteligo_v1 == "Yes") | 
+        (!is.na(Viteligo_v1) & Viteligo_v1 == "Yes") |
         (!is.na(Addisons_disease_v1) & Addisons_disease_v1 == "Yes") |
-        (!is.na(Overactive_Thyroid_v1) & Overactive_Thyroid_v1 == "Yes") | 
+        (!is.na(Overactive_Thyroid_v1) & Overactive_Thyroid_v1 == "Yes") |
         (!is.na(Underactive_Thyroid_v1) & Underactive_Thyroid_v1 == "Yes") |
-        (!is.na(Pernicious_Anaemia_v4) & Pernicious_Anaemia_v4 == "Yes") | 
+        (!is.na(Pernicious_Anaemia_v4) & Pernicious_Anaemia_v4 == "Yes") |
         (!is.na(Rheumatoid_Arthritis_v4) & Rheumatoid_Arthritis_v4 == "Yes"),
-      "1", 
+      "1",
       "0" )
   )
 table(SR$autoimmune)
 #osmotic
 SR <- SR %>%
   mutate(
-    osmotic = ifelse(At_Diagnosis_Feeling_thirsty_v1 == "Yes" | 
-                       Inc_freq_passing_urine_daytime_v1 == "Yes"| 
-                       Inc_freq_passing_urine_night_v1 == "Yes", 
-                     "1", 
+    osmotic = ifelse(At_Diagnosis_Feeling_thirsty_v1 == "Yes" |
+                       Inc_freq_passing_urine_daytime_v1 == "Yes"|
+                       Inc_freq_passing_urine_night_v1 == "Yes",
+                     "1",
                      "0" )
   )
 
@@ -867,19 +917,19 @@ SR <- SR %>%
                                   )
                            )
   )
-  ) 
+  )
 
 #Make DKA and ketosis_without_acidosis
 ##Prep
 ###Blood ketones
 SR <- SR %>%
   mutate(
-    Blood_ketone_result_at_diag_v1 = 
+    Blood_ketone_result_at_diag_v1 =
       ifelse(Blood_ketone_result_at_diag_v1 %in% c(">7", ">7.0", "HI"), "7.1",
-      ifelse(Blood_ketone_result_at_diag_v1 %in% c("N/K", "N/A", "NK", "No Result", "NO RESULT", "NOT AVAILABLE", "NOT KNOWN", "UNKNOWN", "'SOME'", "+"), 
-      "result_unknown", 
+      ifelse(Blood_ketone_result_at_diag_v1 %in% c("N/K", "N/A", "NK", "No Result", "NO RESULT", "NOT AVAILABLE", "NOT KNOWN", "UNKNOWN", "'SOME'", "+"),
+      "result_unknown",
       ifelse(Blood_ketone_result_at_diag_v1 %in% c("NEG", "NEGATIVE", "NO KETONES", "<0.1", "<1MMOL/L", "0"),
-      "value_available", 
+      "value_available",
       ifelse(is.na(Blood_ketone_result_at_diag_v1), "not_tested",
       ifelse(Blood_ketone_result_at_diag_v1 %in% c(">1.5", "1.5MMOL/L"), "1.5",
       ifelse(Blood_ketone_result_at_diag_v1 == ">20", "20.1",
@@ -911,14 +961,14 @@ SR <- SR %>%
 #Remove characters and turn to as numeric
 SR <- SR %>%
   mutate(
-    Blood_ketone_result_at_diag_v1 = ifelse(Blood_ketone_result_at_diag_v1 
-                                            %in% c("not_tested", "result_unknown", "value_available"), NA, 
+    Blood_ketone_result_at_diag_v1 = ifelse(Blood_ketone_result_at_diag_v1
+                                            %in% c("not_tested", "result_unknown", "value_available"), NA,
                                             as.numeric(Blood_ketone_result_at_diag_v1)))
 ###Urine ketones
 SR <- SR %>%
   mutate(
     #Code to pluses, negative and not available
-    urine_ketones_at_diagnosis_v1 = 
+    urine_ketones_at_diagnosis_v1 =
       ifelse(urine_ketones_at_diagnosis_v1 %in% c("+1", "1", "1+", "1.5MMOLS", "15MG/DL", "15MG/LOL"), "+",
       ifelse(urine_ketones_at_diagnosis_v1 %in% c("2+", "YES++", "2", "0.4", "40MG/DL", "716++"), "++",
       ifelse(urine_ketones_at_diagnosis_v1 %in% c("3+", "3++", "3", "KETONES +++", "8MMOLS","80MG/MMOL", "80MG/DL", "50MG", "8", "0.8", "3+++", "LARGE"), "+++",
@@ -931,11 +981,11 @@ SR <- SR %>%
     urine_ketones_at_diagnosis2_v1 = as.numeric(urine_ketones_at_diagnosis_v1),
     #Have two different units (pluses in urine_ketones_at_diagnosis_v1 and values in urine_ketones_at_diagnosis2_v1)
     #The latter also has two different units: looking for > 3 and > 17 (mg/dl) (and > ++ for pluses)
-    high_urine_ketones_v1 = 
+    high_urine_ketones_v1 =
       ifelse(!is.na(urine_ketones_at_diagnosis_v1) & urine_ketones_at_diagnosis_v1 %in% c("+++", "++++"), "1",
       ifelse(
-        !is.na(urine_ketones_at_diagnosis2_v1) & 
-               (urine_ketones_at_diagnosis2_v1 > 17 
+        !is.na(urine_ketones_at_diagnosis2_v1) &
+               (urine_ketones_at_diagnosis2_v1 > 17
              | (urine_ketones_at_diagnosis2_v1 > 3 & urine_ketones_at_diagnosis2_v1 <= 6)),
              "1",
              "0")))
@@ -962,8 +1012,8 @@ SR <- SR %>%
 SR <- SR %>%
   mutate(
     #based on criteria Ph + ketone blood>3 urin >++ or reported as dka and supportive ketone but no PH
-    DKA = ifelse((high_blood_ketones_v1 == "1" 
-                       | high_urine_ketones_v1 == "1") 
+    DKA = ifelse((high_blood_ketones_v1 == "1"
+                       | high_urine_ketones_v1 == "1")
                       & ((pH_less_than_7_3_at_diag_v1 == "Yes" & At_diagnosis_Admitted_to_hosp_v1 == "Yes")
                          | ((pH_less_than_7_3_at_diag_v1 == "No"| pH_less_than_7_3_at_diag_v1 == "Not tested") & At_diagnosis_Admitted_to_hosp_v1 == "Yes" & Ketoacidosis_at_diag_v1 == "Yes")),
                       "1",
@@ -972,56 +1022,56 @@ SR <- SR %>%
 
 # dka_clean <- SR %>%
 #   filter(is.na(DKA)) %>%
-#   select(Study_ID, DKA, studyDKA, high_blood_ketones_v1, pH_less_than_7_3_at_diag_v1, 
-#          At_diagnosis_Admitted_to_hosp_v1, high_urine_ketones_v1, 
-#          Ketoacidosis_at_diag_v1, urine_ketones_at_diagnosis_v1, 
+#   select(Study_ID, DKA, studyDKA, high_blood_ketones_v1, pH_less_than_7_3_at_diag_v1,
+#          At_diagnosis_Admitted_to_hosp_v1, high_urine_ketones_v1,
+#          Ketoacidosis_at_diag_v1, urine_ketones_at_diagnosis_v1,
 #          Blood_ketone_result_at_diag_v1, Blood_ketone_status_v1)
 # dka_cleanED <- SR %>%
 #   filter(!is.na(DKA)) %>%
-#   select(Study_ID, DKA, studyDKA, high_blood_ketones_v1, pH_less_than_7_3_at_diag_v1, 
-#          At_diagnosis_Admitted_to_hosp_v1, high_urine_ketones_v1, 
-#          Ketoacidosis_at_diag_v1, urine_ketones_at_diagnosis_v1, 
+#   select(Study_ID, DKA, studyDKA, high_blood_ketones_v1, pH_less_than_7_3_at_diag_v1,
+#          At_diagnosis_Admitted_to_hosp_v1, high_urine_ketones_v1,
+#          Ketoacidosis_at_diag_v1, urine_ketones_at_diagnosis_v1,
 #          Blood_ketone_result_at_diag_v1, Blood_ketone_status_v1)
 # SR %>%
 #   filter(Blood_ketone_status_v1 == "not_tested" & is.na(urine_ketones_at_diagnosis_v1)) %>%
-#   select(Study_ID, DKA, studyDKA, high_blood_ketones_v1, pH_less_than_7_3_at_diag_v1, 
-#          At_diagnosis_Admitted_to_hosp_v1, high_urine_ketones_v1, 
-#          Ketoacidosis_at_diag_v1, urine_ketones_at_diagnosis_v1, 
+#   select(Study_ID, DKA, studyDKA, high_blood_ketones_v1, pH_less_than_7_3_at_diag_v1,
+#          At_diagnosis_Admitted_to_hosp_v1, high_urine_ketones_v1,
+#          Ketoacidosis_at_diag_v1, urine_ketones_at_diagnosis_v1,
 #          Blood_ketone_result_at_diag_v1, Blood_ketone_status_v1)
-# 
+#
 # SR %>%
 #   filter(Blood_ketone_status_v1 == "not_tested" & is.na(urine_ketones_at_diagnosis_v1) & is.na(pH_less_than_7_3_at_diag_v1) & is.na(At_diagnosis_Admitted_to_hosp_v1) & is.na(Ketoacidosis_at_diag_v1)) %>%
-#   select(Study_ID, DKA, studyDKA, ketone3, pH_less_than_7_3_at_diag_v1, 
-#          At_diagnosis_Admitted_to_hosp_v1, high_urine_ketones, 
-#          Ketoacidosis_at_diag_v1, urine_ketones_at_diagnosis_v1, 
+#   select(Study_ID, DKA, studyDKA, ketone3, pH_less_than_7_3_at_diag_v1,
+#          At_diagnosis_Admitted_to_hosp_v1, high_urine_ketones,
+#          Ketoacidosis_at_diag_v1, urine_ketones_at_diagnosis_v1,
 #          Blood_ketone_result_at_diag_v1, Blood_ketone_status_v1)
-# 
+#
 # SR %>%
 #   filter((DKA == "1" & studyDKA == "0") | (DKA == "0" & studyDKA == "1")) %>%
-#   select(Study_ID, DKA, studyDKA, ketone3, pH_less_than_7_3_at_diag_v1, 
-#          At_diagnosis_Admitted_to_hosp_v1, high_urine_ketones, 
-#          Ketoacidosis_at_diag_v1, urine_ketones_at_diagnosis_v1, 
+#   select(Study_ID, DKA, studyDKA, ketone3, pH_less_than_7_3_at_diag_v1,
+#          At_diagnosis_Admitted_to_hosp_v1, high_urine_ketones,
+#          Ketoacidosis_at_diag_v1, urine_ketones_at_diagnosis_v1,
 #          Blood_ketone_result_at_diag_v1, Blood_ketone_status_v1)
-# 
+#
 # table(SR$DKA, SR$studyDKA, useNA = "ifany")
 # table(SR$DKA2, SR$studyDKA, useNA = "ifany")
 ##ketosis_without_acidosis
 # SR <- SR %>%
-#   mutate(ketosis_v1 = ifelse((!is.na(Blood_ketone_result_at_diag_v1) & Blood_ketone_result_at_diag_v1 >= 0.7) 
+#   mutate(ketosis_v1 = ifelse((!is.na(Blood_ketone_result_at_diag_v1) & Blood_ketone_result_at_diag_v1 >= 0.7)
 #                              | ((!is.na(urine_ketones_at_diagnosis_v1) & urine_ketones_at_diagnosis_v1 %in% c("++", "+++", "++++") )
 #                                 | (!is.na(urine_ketones_at_diagnosis2_v1) & (urine_ketones_at_diagnosis2_v1 >= 17 | (urine_ketones_at_diagnosis2_v1 >= 3 & urine_ketones_at_diagnosis2_v1 <= 6)))
 #                                 ),
 #                              "1", "0"))
 SR <- SR %>%
-  mutate(ketosis_v1 = ifelse((!is.na(Blood_ketone_result_at_diag_v1) & Blood_ketone_result_at_diag_v1 >= 0.7) 
+  mutate(ketosis_v1 = ifelse((!is.na(Blood_ketone_result_at_diag_v1) & Blood_ketone_result_at_diag_v1 >= 0.7)
                              | ((!is.na(urine_ketones_at_diagnosis_v1) & urine_ketones_at_diagnosis_v1 %in% c("++", "+++", "++++") )
                                 | (!is.na(urine_ketones_at_diagnosis2_v1) & (urine_ketones_at_diagnosis2_v1 >= 17 | (urine_ketones_at_diagnosis2_v1 >= 3 & urine_ketones_at_diagnosis2_v1 <= 6)))
                              ),
-                             "1", 
+                             "1",
                              ifelse(is.na(Blood_ketone_result_at_diag_v1) & (is.na(urine_ketones_at_diagnosis_v1) | urine_ketones_at_diagnosis_v1 %in% c("negative", "trace", "unknown")), NA, "0")))
 
-table(SR$ketosis_v1, 
-      SR$DKA, 
+table(SR$ketosis_v1,
+      SR$DKA,
       useNA = "ifany")
 SR <- SR %>%
   mutate(ketosis_no_acidosis_v1 = ifelse(ketosis_v1 == "1" & DKA == "0", "1",
@@ -1032,10 +1082,10 @@ table(SR$ketosis_no_acidosis_v1, useNA = "ifany")
 ##Insulin requirement at 3 years ----------------------------------------------------
 SR <- SR %>%
   mutate(ins_outcome = ifelse(is.na(Initial_diabetes_Insulin_v1),
-                              ifelse(!is.na(dur_diab_joined_v4) & dur_diab_joined_v4 >= 2.86, 
-                                     ifelse(!is.na(Insulin_v4) & (Insulin_v4 == "No"|Insulin_v4 == "no"|Insulin_v4 == "NO"), 
+                              ifelse(!is.na(dur_diab_joined_v4) & dur_diab_joined_v4 >= 2.86,
+                                     ifelse(!is.na(Insulin_v4) & (Insulin_v4 == "No"|Insulin_v4 == "no"|Insulin_v4 == "NO"),
                                             "T2D no insulin v4",
-                                            ifelse(!is.na(Insulin_v4) & Insulin_v4 == "Yes", 
+                                            ifelse(!is.na(Insulin_v4) & Insulin_v4 == "Yes",
                                                    "T1D yes insulin v4 ",
                                                    "missing insulin v4"
                                             )
@@ -1057,9 +1107,9 @@ SR <- SR %>%
 
 SR <- SR %>%
   mutate(insulinRequire = ifelse(str_detect(ins_outcome, "T1D"),
-                                 "1", 
+                                 "1",
                                  ifelse(str_detect(ins_outcome, "T2D"),
-                                        "0", 
+                                        "0",
                                         NA
                                  )
   )
@@ -1089,41 +1139,41 @@ SR %>%
   dplyr::select(Study_ID, c_peptide_v4, bloodspot_cpeptide_v4)
 
 SR <- SR %>%
-  mutate(bloodspot_cpeptide_v4 = ifelse(bloodspot_cpeptide_v4 == "<100", 
+  mutate(bloodspot_cpeptide_v4 = ifelse(bloodspot_cpeptide_v4 == "<100",
                                         "99",
-                                        ifelse(bloodspot_cpeptide_v4 == "<200", 
-                                               "199", 
+                                        ifelse(bloodspot_cpeptide_v4 == "<200",
+                                               "199",
                                                ifelse(bloodspot_cpeptide_v4 == "IQE" | bloodspot_cpeptide_v4 == "Lab Error" | bloodspot_cpeptide_v4 == "Mis sampled" | bloodspot_cpeptide_v4 == "No result" | bloodspot_cpeptide_v4 == "No Result" | bloodspot_cpeptide_v4 == "Not Collected" | bloodspot_cpeptide_v4 == "Not returned" | bloodspot_cpeptide_v4 == "Not Returned",
-                                                      NA, 
+                                                      NA,
                                                       bloodspot_cpeptide_v4))))
 
 SR$bloodspot_cpeptide_v4 <- as.numeric(SR$bloodspot_cpeptide_v4)
 
 SR <- SR %>%
-  mutate(c_peptide_v4 = ifelse(!is.na(c_peptide_v4) & !is.na(bloodspot_cpeptide_v4) & c_peptide_v4 == bloodspot_cpeptide_v4, 
+  mutate(c_peptide_v4 = ifelse(!is.na(c_peptide_v4) & !is.na(bloodspot_cpeptide_v4) & c_peptide_v4 == bloodspot_cpeptide_v4,
                                mean(c_peptide_v4, bloodspot_cpeptide_v4),
                                ifelse(is.na(c_peptide_v4),
-                                      bloodspot_cpeptide_v4, 
+                                      bloodspot_cpeptide_v4,
                                       c_peptide_v4)))
 
 
 SR %>%
   filter(Study_ID %in% c("SR2601","SR1003" )) %>%
-  select(Study_ID, Insulin_v1, Insulin_v2, Insulin_v3, Insulin_v4, 
-         Insulin_Rapid_acting_v4, Insulin_Mix_v4, Insulin_Pump_v4, 
+  select(Study_ID, Insulin_v1, Insulin_v2, Insulin_v3, Insulin_v4,
+         Insulin_Rapid_acting_v4, Insulin_Mix_v4, Insulin_Pump_v4,
          Insulin_Long_acting_v4)
 
-# "SR0278", 
+# "SR0278",
 # "SR2175"
 
 ##do this for now
 SR <- SR %>%
   mutate(
-    Insulin_v4 = ifelse(Study_ID %in% c("SR1764","SR3401"), "No", 
+    Insulin_v4 = ifelse(Study_ID %in% c("SR1764","SR3401"), "No",
                         ifelse(
-                          #this is to reduce missing Insulin_v4, 
+                          #this is to reduce missing Insulin_v4,
                           #this patient on insulin on all other visits
-                          Study_ID %in% c("SR0245","SR1061","SR1018","SR1602", 
+                          Study_ID %in% c("SR0245","SR1061","SR1018","SR1602",
                                           "SR2601","SR1003"),
                           "Yes",
                           Insulin_v4)),
@@ -1136,20 +1186,20 @@ SR <- SR %>%
     Insulin_v1 = ifelse(Study_ID %in% c("SR2175"),
                         "Yes",
                         Insulin_v1))
-                             
+
 
 
 SR <- SR %>%
   #create a new variable called "define"
-  mutate(define = 
+  mutate(define =
            # if "dur_diab_year_v4" (duration of diabetes at visit 4) is not missing and >= 2.86
-           ifelse(!is.na(dur_diab_joined_v4) & dur_diab_joined_v4 >= 2.86, 
+           ifelse(!is.na(dur_diab_joined_v4) & dur_diab_joined_v4 >= 2.86,
                   #look at if Insulin at visit 4 is not missing and == "No"
-                  ifelse(!is.na(Insulin_v4) & (Insulin_v4 == "No"|Insulin_v4 == "no"|Insulin_v4 == "NO"), 
+                  ifelse(!is.na(Insulin_v4) & (Insulin_v4 == "No"|Insulin_v4 == "no"|Insulin_v4 == "NO"),
                          #dur_diab_year_v4 >= 2.86 and insulin = no at visit 4
                          "T2D no insulin v4",
                          #otherwise look if insulin at visit 4 is not missing and == "Yes"
-                         ifelse(!is.na(Insulin_v4) & Insulin_v4 == "Yes", 
+                         ifelse(!is.na(Insulin_v4) & Insulin_v4 == "Yes",
                                 #if is is "Yes" check that v4 Cpep is not missing and >= 600
                                 ifelse(!is.na(c_peptide_v4) & c_peptide_v4 >= 600,
                                        #dur_diab_year_v4 >=2.86, insulin at v4 == "Yes" and Cpep >= 600
@@ -1272,7 +1322,7 @@ SR <- SR %>%
                                        #dur_diab_yr_v4 <2.86, dur_diab_yr_v3 >= 2.86 and Insulin == "No"
                                        "T2D no insulin v3",
                                        #check if v3 insulin is non-missing and Insulin == "Yes"
-                                       ifelse(!is.na(Insulin_v3) & Insulin_v3 == "Yes", 
+                                       ifelse(!is.na(Insulin_v3) & Insulin_v3 == "Yes",
                                               #if so check v3 UCPCR >= 1.1
                                               ifelse(!is.na(UCPCR_v3) & UCPCR_v3 >= 1.1,
                                                      #dur_diab_yr_v4 <2.86, dur_diab_yr_v3 >= 2.86 and Insulin == "Yes", V3 UCPCR >=1.1
@@ -1302,16 +1352,16 @@ SR <- SR %>%
 
 #define outcome variable
 SR <- SR %>%
-  mutate(SRoutcome = 
+  mutate(SRoutcome =
            #if detect "T1D" in the string in variable "definition"
            ifelse(str_detect(define, "T1D"),
                   #assign "1" to new variable "outcome" (these are type 1 diabetes according to our definition)
-                  "1", 
+                  "1",
                   #if dont detect "T1D"
                   #check if detect "T2D" in string in variable "definition"
                   ifelse(str_detect(define, "T2D"),
                          #assign "0" to new variable "outcome" (these are type 2 diabetes according to our definition)
-                         "0", 
+                         "0",
                          #since have detected neither "T1D" or "T2D" assign NA (these we cannot define)
                          NA
                   )
@@ -1321,7 +1371,7 @@ SR <- SR %>%
 #Robust_definition
 SR <- SR %>%
   #create a new variable called "define"
-  mutate(robust_define = 
+  mutate(robust_define =
   # if "dur_diab_year_v4" (duration of diabetes at visit 4) is not missing and >= 2.86
   ifelse(!is.na(dur_diab_joined_v4) & dur_diab_joined_v4 >= 2.86,
          ifelse(!is.na(Insulin_v4) & (Insulin_v4 == "No"),
@@ -1333,7 +1383,7 @@ SR <- SR %>%
                               "Unclassified, no ins, missing antis"
                        )
                 ),
-                ifelse(!is.na(Insulin_v4) & Insulin_v4 == "Yes", 
+                ifelse(!is.na(Insulin_v4) & Insulin_v4 == "Yes",
                        #if is is "Yes" check that v4 Cpep is not missing and >= 600
                        ifelse((!is.na(c_peptide_v4) & c_peptide_v4 < 200) | (!is.na(num_anti) & num_anti >= 2),
                               #dur_diab_year_v4 >=2.86, insulin at v4 == "Yes" and Cpep >= 600
@@ -1383,16 +1433,16 @@ SR <- SR %>%
                 "Unclassified v4 and v3 duration missing|<3 years"
          )
   ),
-robust_outcome = 
+robust_outcome =
   #if detect "T1D" in the string in variable "definition"
   ifelse(str_detect(robust_define, "T1D"),
          #assign "1" to new variable "outcome" (these are type 1 diabetes according to our definition)
-         "T1D", 
+         "T1D",
          #if dont detect "T1D"
          #check if detect "T2D" in string in variable "definition"
          ifelse(str_detect(robust_define, "T2D"),
                 #assign "0" to new variable "outcome" (these are type 2 diabetes according to our definition)
-                "T2D", 
+                "T2D",
                 #since have detected neither "T1D" or "T2D" assign NA (these we cannot define)
                 NA
          )
@@ -1401,16 +1451,16 @@ robust_outcome =
 
 #define outcome variable
 #SR <- SR %>%
-  #mutate(robust_outcome = 
+  #mutate(robust_outcome =
            #if detect "T1D" in the string in variable "definition"
            #ifelse(str_detect(define, "T1D"),
                   #assign "1" to new variable "outcome" (these are type 1 diabetes according to our definition)
-                  #"T1D", 
+                  #"T1D",
                   #if dont detect "T1D"
                   #check if detect "T2D" in string in variable "definition"
                   #ifelse(str_detect(define, "T2D"),
                          #assign "0" to new variable "outcome" (these are type 2 diabetes according to our definition)
-                        # "T2D", 
+                        # "T2D",
                          #since have detected neither "T1D" or "T2D" assign NA (these we cannot define)
                          #NA
                   #)

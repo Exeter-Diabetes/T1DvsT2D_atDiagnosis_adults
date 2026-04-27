@@ -7,11 +7,11 @@
 #produces a data.frame and Excell summary table of the variable list
 #containing accuracy, sensitivity, specificity, PPV, NPV, variable coefficient,
 #optimal variable threshold (at which previous values are calculated) and ROC AUC
-#also produces PDF of individual ROCs 
+#also produces PDF of individual ROCs
 
 ########################################################################################
 #Arguments:
-# varlist_cat (variable list) - string list of categorical variable names in dataset 
+# varlist_cat (variable list) - string list of categorical variable names in dataset
 #                           (must be in character or factor class), currently for only 2 categories per variable
 # dataset - name of dataset where in variables in outcome and varlist_cat are found
 # outcome - name of binary outcome variable, as found in dataset
@@ -20,23 +20,23 @@
 
 
 cat_contingency <- function(
-    varlist_cat = varlist_cat, 
-    dataset = dataset, 
+    varlist_cat = varlist_cat,
+    dataset = dataset,
     outcome = NULL,
     saving_name = NULL,
-    complete_case = FALSE, 
-    plots = TRUE, 
+    complete_case = FALSE,
+    plots = TRUE,
     decimals = 2){
-  
+
   #browser()
-  #Argument checks 
+  #Argument checks
   ##Checks for "dataset"
   if(missing(dataset) | is.null(dataset)) {stop("'dataset' needs to be provided.")}
   ##Checks for "varlist"
   if(missing(varlist_cat) | is.null(varlist_cat)) {stop("'varlist_cat' (list of categorical variable names in dataset) needs to be provided.")}
   ##Checks for "dataset"
   if(missing(outcome) | is.null(outcome)) {stop("'outcome' (binary outcome variable in dataset) needs to be provided.")}
-  
+
   #Load relevant libraries
   library(tidyverse)
   library(pROC)
@@ -46,13 +46,13 @@ cat_contingency <- function(
   library(gtsummary)
   library(png)
   library(qwraps2)
-  
+
   #browser()
   #save names as vectors
   dataset_name <- deparse(substitute(dataset))
   name <- saving_name
-  
-  
+
+
   #Load nb functions
   gt_grob <- function(gt_object, ...){
     out_name <- file.path(
@@ -63,7 +63,7 @@ cat_contingency <- function(
     on.exit(file.remove(out_name), add=TRUE)
     grid::rasterGrob(in_png)
   }
-  
+
   #If outcome is specified
   if(!is.null(outcome)){
     #Make output data.frame
@@ -72,15 +72,19 @@ cat_contingency <- function(
     #cycle through each categorical variable in 'varlist_cat'
     for(var in varlist_cat){
       #Make dummy data.frame for summary information of model per var
-      sum_table <- data.frame(variable = NA, 
+      sum_table <- data.frame(variable = NA,
+                              category = NA,
                               n = NA,
-                              Accuracy = NA, 
-                              Sensitivity = NA, 
-                              Specificity = NA, 
-                              PPV = NA, 
-                              NPV = NA)
+                              ROC_AUC = NA,
+                              Sensitivity = NA,
+                              Specificity = NA,
+                              PPV = NA,
+                              NPV = NA,
+                              Accuracy = NA,
+                              ROCAUC = NA)
       #Assign var name to row
       sum_table$variable <- var
+      print(var)
       #IF complete_case is FALSE
       if(complete_case == FALSE){
         dataset_cc <- dataset %>%
@@ -93,10 +97,21 @@ cat_contingency <- function(
       }
       groups <- unique(dataset_cc[[outcome]])
       groups <- groups[!groups == 'NA']
-      
+
+      for (g in groups) {
+        #browser()
+        table_outcome_groups <- data.frame(n=NA)
+        dataset1 <- data.frame(Outcome = dataset_cc[[outcome]])
+        dataset1 <- as.data.frame(dataset1[dataset1$Outcome== g & !is.na(dataset1$Outcome),])
+        table_outcome_groups$n <- nrow(dataset1)
+        colnames(table_outcome_groups)[colnames(table_outcome_groups) == "n"] <- paste(g, "n")
+        #table_outcome_groups$mean <- mean(as.numeric(dataset1$prob))
+        #colnames(table_outcome_groups)[colnames(table_outcome_groups) == "mean"] <- paste(g, "mean")
+        sum_table <- cbind(sum_table, table_outcome_groups)
+      }
       #Train logistic regression model using categorical var on binary outcome
-      model <- glm(formula(paste0(outcome, "~factor(", var, ")")), 
-                   data = dataset_cc, 
+      model <- glm(formula(paste0(outcome, "~factor(", var, ")")),
+                   data = dataset_cc,
                    family = binomial)
       #Make new columns of model predictions
       dataset_cc <- dataset_cc %>%
@@ -105,55 +120,176 @@ cat_contingency <- function(
           model_pp = predict(model, dataset_cc, type = "response"),
           #Make column for log-odds of new model
           model_log_odds = predict(model, dataset_cc))
+      categories <- unique(dataset_cc[[var]])
       #get model coefficients
-      coef_table <- as.data.frame(model$coefficient[2])
-      coef_table$variable <- var
-      coef_table$category <- as.character(rownames(coef_table))
-      
-      coef_table$p_value <- coef(summary(model))[str_detect(row.names(coef(summary(model))), var), 4]
-      coef_table <- coef_table %>%
-        rename(
-          coefficients = `model$coefficient[2]`
+      #browser()
+      if(length(categories) > 2) {
+        coef_table <- as.data.frame(model$coefficient)
+        coef_table <- tail(coef_table, -1)
+
+        coef_table$variable <- var
+        coef_table$category <- as.character(rownames(coef_table))
+
+        coef_table$coef_pvalue <- coef(summary(model))[str_detect(row.names(coef(summary(model))), var), 4]
+        coef_table <- coef_table %>%
+          rename(
+            coefficients = `model$coefficient`
           )
-      coef_table$coef_2.5CI <- confint(model)[str_detect(row.names(confint(model)), var), 1]
-      coef_table$coef_97.5CI <- confint(model)[str_detect(row.names(confint(model)), var), 2]
-      coef_table$coef_ci <- paste0(round(coef_table$coefficients, decimals), " (", round(coef_table$coef_2.5CI, decimals), "; ", 
-                                   round(coef_table$coef_97.5CI, decimals), ")")
+        coef_table$coef_2.5CI <- confint(model)[str_detect(row.names(confint(model)), var), 1]
+        coef_table$coef_97.5CI <- confint(model)[str_detect(row.names(confint(model)), var), 2]
+        coef_table$coef_ci <- paste0(round(coef_table$coefficients, decimals), " (", round(coef_table$coef_2.5CI, decimals), "; ",
+                                     round(coef_table$coef_97.5CI, decimals), ")")
+        uni_cat_coeffs <- rbind(uni_cat_coeffs, coef_table)
+      } else{
+        coef_table <- as.data.frame(model$coefficient[2])
+        coef_table$variable <- var
+        coef_table$category <- as.character(rownames(coef_table))
+
+        coef_table$coef_pvalue <- coef(summary(model))[str_detect(row.names(coef(summary(model))), var), 4]
+        coef_table <- coef_table %>%
+          rename(
+            coefficients = `model$coefficient[2]`
+          )
+        coef_table$coef_2.5CI <- confint(model)[str_detect(row.names(confint(model)), var), 1]
+        coef_table$coef_97.5CI <- confint(model)[str_detect(row.names(confint(model)), var), 2]
+        coef_table$coef_ci <- paste0(round(coef_table$coefficients, decimals), " (", round(coef_table$coef_2.5CI, decimals), "; ",
+                                     round(coef_table$coef_97.5CI, decimals), ")")
+      }
+
+
+
       #Run ROC analysis
-      
-      
+
+
+
       #Assign relevant model summary information to dummy table row
       sum_table$n <- nrow(dataset_cc)
-      conf_matrix <- confusion_matrix(dataset_cc[[outcome]], 
-                                      dataset_cc[[var]], 
+      if(length(categories) > 2) {
+        #categories <- categories[-1]
+        non_ref_cats <- as.character(categories[-1])
+        ref_cat <- as.character(categories[1])
+        for (c in non_ref_cats){
+          sum_table_cat <- data.frame(variable = NA,
+                                  category = NA,
+                                  n = NA,
+                                  ROC_AUC = NA,
+                                  Sensitivity = NA,
+                                  Specificity = NA,
+                                  PPV = NA,
+                                  NPV = NA,
+                                  Accuracy = NA,
+                                  ROCAUC = NA)
+          sum_table_cat$category <- c
+          print(c)
+          sum_table_cat$variable <- var
+          if(complete_case == FALSE){
+            dataset_cc <- dataset %>%
+              drop_na(all_of(var))
+          } else{
+            dataset_cc <- dataset %>%
+              drop_na(all_of(varlist_cat))
+          }
+          dataset_cc <- dataset_cc %>%
+            filter(!!sym(var) %in% c(c, ref_cat))
+          sum_table_cat$n <- nrow(dataset_cc)
+
+          dataset_cc <- dataset_cc %>%
+            mutate(
+              !!sym(var) := ifelse(!!sym(var) == ref_cat, 0, 1)
+            )
+          conf_matrix <- confusion_matrix(dataset_cc[[outcome]],
+                                          dataset_cc[[var]],
+                                          thresholds = 1)
+
+          sens <- conf_matrix$cm_stats["sensitivity"]*100
+          sens_lci <- conf_matrix$cm_stats["sensitivity_lcl"]*100
+          sens_uci <- conf_matrix$cm_stats["sensitivity_ucl"]*100
+          sum_table_cat$Sensitivity <- paste0(round(sens[2,1],decimals),
+                                          " (", round(sens_lci[2,1],decimals), "; ",
+                                          round(sens_uci[2,1],decimals), ")")
+          specif <- conf_matrix$cm_stats["specificity"]*100
+          specif_lci <- conf_matrix$cm_stats["specificity_lcl"]*100
+          specif_uci <- conf_matrix$cm_stats["specificity_ucl"]*100
+          sum_table_cat$Specificity <- paste0(round(specif[2,1],decimals),
+                                          " (", round(specif_lci[2,1],decimals), "; ",
+                                          round(specif_uci[2,1],decimals), ")")
+          ppv <- conf_matrix$cm_stats["ppv"]*100
+          ppv_lci <- conf_matrix$cm_stats["ppv_lcl"]*100
+          ppv_uci <- conf_matrix$cm_stats["ppv_ucl"]*100
+          sum_table_cat$PPV <- paste0(round(ppv[2,1],decimals),
+                                  " (", round(ppv_lci[2,1],decimals), "; ",
+                                  round(ppv_uci[2,1],decimals), ")")
+          npv <- conf_matrix$cm_stats["npv"]*100
+          npv_lci <- conf_matrix$cm_stats["npv_lcl"]*100
+          npv_uci <- conf_matrix$cm_stats["npv_ucl"]*100
+          sum_table_cat$NPV <- paste0(round(npv[2,1],decimals),
+                                  " (", round(npv_lci[2,1],decimals), "; ",
+                                  round(npv_uci[2,1],decimals), ")")
+          accur <- conf_matrix$cm_stats["accuracy"]*100
+          accur_lci <- conf_matrix$cm_stats["accuracy_lcl"]*100
+          accur_uci <- conf_matrix$cm_stats["accuracy_ucl"]*100
+          sum_table_cat$Accuracy <- paste0(round(accur[2,1],decimals),
+                                       " (", round(accur_lci[2,1],decimals), "; ",
+                                       round(accur_uci[2,1],decimals), ")")
+          auc_ci <-conf_matrix[["auroc_ci"]]
+          sum_table_cat$ROC_AUC <- paste0(round(conf_matrix[["auroc"]],decimals),
+                                      " (", round(auc_ci[1],decimals), "; ",
+                                      round(auc_ci[2],decimals), ")")
+          sum_table_cat$ROCAUC <- round(conf_matrix[["auroc"]],decimals)
+          for (g in groups) {
+            #browser()
+            print(g)
+            table_outcome_groups <- data.frame(n=NA)
+            # if(complete_case == FALSE){
+            #   dataset_cc <- dataset %>%
+            #     drop_na(all_of(var))
+            # } else{
+            #   dataset_cc <- dataset %>%
+            #     drop_na(all_of(varlist_cat))
+            # }
+            dataset1 <- data.frame(Outcome = dataset_cc[[outcome]])
+            dataset1 <- as.data.frame(dataset1[dataset1$Outcome== g & !is.na(dataset1$Outcome),])
+            table_outcome_groups$n <- nrow(dataset1)
+            colnames(table_outcome_groups)[colnames(table_outcome_groups) == "n"] <- paste(g, "n")
+            #table_outcome_groups$mean <- mean(as.numeric(dataset1$prob))
+            #colnames(table_outcome_groups)[colnames(table_outcome_groups) == "mean"] <- paste(g, "mean")
+            sum_table_cat <- cbind(sum_table_cat, table_outcome_groups)
+          }
+
+          sum_table <- rbind(sum_table, sum_table_cat)
+        }
+      }else {
+        #browser()
+      conf_matrix <- confusion_matrix(dataset_cc[[outcome]],
+                                      dataset_cc[[var]],
                                       thresholds = 1)
-      sens <- conf_matrix$cm_stats["sensitivity"]
-      sens_lci <- conf_matrix$cm_stats["sensitivity_lcl"]
-      sens_uci <- conf_matrix$cm_stats["sensitivity_ucl"]
-      sum_table$Sensitivity <- paste0(round(sens[2,1],decimals), 
-                                         " (", round(sens_lci[2,1],decimals), "; ", 
+      sens <- conf_matrix$cm_stats["sensitivity"]*100
+      sens_lci <- conf_matrix$cm_stats["sensitivity_lcl"]*100
+      sens_uci <- conf_matrix$cm_stats["sensitivity_ucl"]*100
+      sum_table$Sensitivity <- paste0(round(sens[2,1],decimals),
+                                         " (", round(sens_lci[2,1],decimals), "; ",
                                          round(sens_uci[2,1],decimals), ")")
-      specif <- conf_matrix$cm_stats["specificity"]
-      specif_lci <- conf_matrix$cm_stats["specificity_lcl"]
-      specif_uci <- conf_matrix$cm_stats["specificity_ucl"]
-      sum_table$Specificity <- paste0(round(specif[2,1],decimals), 
-                                         " (", round(specif_lci[2,1],decimals), "; ", 
+      specif <- conf_matrix$cm_stats["specificity"]*100
+      specif_lci <- conf_matrix$cm_stats["specificity_lcl"]*100
+      specif_uci <- conf_matrix$cm_stats["specificity_ucl"]*100
+      sum_table$Specificity <- paste0(round(specif[2,1],decimals),
+                                         " (", round(specif_lci[2,1],decimals), "; ",
                                          round(specif_uci[2,1],decimals), ")")
-      ppv <- conf_matrix$cm_stats["ppv"]
-      ppv_lci <- conf_matrix$cm_stats["ppv_lcl"]
-      ppv_uci <- conf_matrix$cm_stats["ppv_ucl"]
+      ppv <- conf_matrix$cm_stats["ppv"]*100
+      ppv_lci <- conf_matrix$cm_stats["ppv_lcl"]*100
+      ppv_uci <- conf_matrix$cm_stats["ppv_ucl"]*100
       sum_table$PPV <- paste0(round(ppv[2,1],decimals),
                                  " (", round(ppv_lci[2,1],decimals), "; ",
                                  round(ppv_uci[2,1],decimals), ")")
-      npv <- conf_matrix$cm_stats["npv"]
-      npv_lci <- conf_matrix$cm_stats["npv_lcl"]
-      npv_uci <- conf_matrix$cm_stats["npv_ucl"]
+      npv <- conf_matrix$cm_stats["npv"]*100
+      npv_lci <- conf_matrix$cm_stats["npv_lcl"]*100
+      npv_uci <- conf_matrix$cm_stats["npv_ucl"]*100
       sum_table$NPV <- paste0(round(npv[2,1],decimals),
                                  " (", round(npv_lci[2,1],decimals), "; ",
                                  round(npv_uci[2,1],decimals), ")")
-      accur <- conf_matrix$cm_stats["accuracy"]
-      accur_lci <- conf_matrix$cm_stats["accuracy_lcl"]
-      accur_uci <- conf_matrix$cm_stats["accuracy_ucl"]
+      accur <- conf_matrix$cm_stats["accuracy"]*100
+      accur_lci <- conf_matrix$cm_stats["accuracy_lcl"]*100
+      accur_uci <- conf_matrix$cm_stats["accuracy_ucl"]*100
       sum_table$Accuracy <- paste0(round(accur[2,1],decimals),
                                       " (", round(accur_lci[2,1],decimals), "; ",
                                       round(accur_uci[2,1],decimals), ")")
@@ -162,72 +298,58 @@ cat_contingency <- function(
                                      " (", round(auc_ci[1],decimals), "; ",
                                      round(auc_ci[2],decimals), ")")
       sum_table$ROCAUC <- round(conf_matrix[["auroc"]],decimals)
-      # sum_table$accuracy <- model_pr$accuracy
-      # sum_table$sensitivity <- model_pr$sensitivity
-      # sum_table$specificity <- model_pr$specificity
-      
-      for (g in groups) {
-        #browser()
-        table_outcome_groups <- data.frame(n=NA)
-        dataset1 <- data.frame(Outcome = dataset_cc[[outcome]]) 
-        dataset1 <- as.data.frame(dataset1[dataset1$Outcome== g & !is.na(dataset1$Outcome),])
-        table_outcome_groups$n <- nrow(dataset1)
-        colnames(table_outcome_groups)[colnames(table_outcome_groups) == "n"] <- paste(g, "n")
-        #table_outcome_groups$mean <- mean(as.numeric(dataset1$prob))
-        #colnames(table_outcome_groups)[colnames(table_outcome_groups) == "mean"] <- paste(g, "mean")
-        sum_table <- cbind(sum_table, table_outcome_groups)
-        
-      }
 
-      
+      }
+      #browser()
+
       #Join var row to output data.frame
       uni_cat_table <- rbind(uni_cat_table, sum_table)
       uni_cat_coeffs <- rbind(uni_cat_coeffs, coef_table)
-      
+
       #Print ROC plot
       #print(roc_model)
-      
-      
-      
+
+
+
       if(complete_case == TRUE){
         uni_cat_table <- uni_cat_table %>%
           arrange(desc(ROCAUC))
       }
     }
-    
+
     uni_cat_table <- full_join(uni_cat_table, uni_cat_coeffs)
     uni_cat_coeffs <<- as.data.frame(uni_cat_coeffs)
     uni_cat_table <<- as.data.frame(uni_cat_table)
-    
+
     #Save output data.frame to global environment
     ## If user-defined saving name not provided
     if(is.null(saving_name)){
       #Save table with default name
-      mv(from= "uni_cat_coeffs", 
-         to = paste0(dataset_name, "categorical_models_coefficients_table"), 
+      mv(from= "uni_cat_coeffs",
+         to = paste0(dataset_name, "categorical_models_coefficients_table"),
          envir = globalenv())
-      write_xlsx(uni_cat_coeffs, 
+      write_xlsx(uni_cat_coeffs,
                  paste0(dataset_name,
                         "categorical_models_coefficients_table.xlsx"))
-      mv(from= "uni_cat_table", 
-         to = paste0(dataset_name, "univariate_categorical_models_table"), 
+      mv(from= "uni_cat_table",
+         to = paste0(dataset_name, "univariate_categorical_models_table"),
          envir = globalenv())
-      write_xlsx(uni_cat_table, 
+      write_xlsx(uni_cat_table,
                  paste0(dataset_name,
                         "univariate_categorical_models_table.xlsx"))
-      } 
+      }
     #if user-defined name specified
     else{
       #save excell tables with user-defined name
-      mv(from= "uni_cat_coeffs", 
-         to = paste0(name, "_coefficients"), 
+      mv(from= "uni_cat_coeffs",
+         to = paste0(name, "_coefficients"),
          envir = globalenv())
-      write_xlsx(uni_cat_coeffs, 
+      write_xlsx(uni_cat_coeffs,
                  paste0(name,"_coefficients.xlsx"))
-      write_xlsx(uni_cat_table, 
+      write_xlsx(uni_cat_table,
                  paste0(name,".xlsx"))
-      mv(from= "uni_cat_table", 
-         to = paste0(name), 
+      mv(from= "uni_cat_table",
+         to = paste0(name),
          envir = globalenv())
       }
     #Produce PDF with default name
@@ -238,7 +360,7 @@ cat_contingency <- function(
         }
       #if user-defined name specified
       else{
-        pdf(paste0(name,".pdf")) 
+        pdf(paste0(name,".pdf"))
         }
       for (var in varlist_cat){
         #browser()
@@ -254,8 +376,8 @@ cat_contingency <- function(
             drop_na(all_of(varlist_cat))
         }
         #Run model
-        model <- glm(formula(paste0(outcome, "~as.factor(", var, ")")), 
-                     data = dataset_cc, 
+        model <- glm(formula(paste0(outcome, "~as.factor(", var, ")")),
+                     data = dataset_cc,
                      family = binomial)
         dataset_cc <- dataset_cc %>%
           mutate(pred_prob = predict(model, dataset_cc, type = "response"))
@@ -274,7 +396,7 @@ cat_contingency <- function(
                             pROC::roc(response = Outcome, predictor = prob) %>%
                             magrittr::extract(c(9)) %>%
                             unlist())
-            ) 
+            )
         dat_text <- roc_curves %>%
           dplyr::select(-sensitivities, -specificities) %>%
           distinct() %>%
@@ -282,7 +404,7 @@ cat_contingency <- function(
             auc_full = paste0("AUC: ", signif(auc, 2))
             )
         #Prep contingency table
-        contingency_tab <- dataset_cc %>% 
+        contingency_tab <- dataset_cc %>%
           select(all_of(var),.data[[outcome]]) %>%
           tbl_cross(row = all_of(var),
                     col = .data[[outcome]],
@@ -292,8 +414,8 @@ cat_contingency <- function(
           bold_labels()
         contingency_tab <- as_gt(contingency_tab)
         gt_plot_cont_tab <- gt_grob(contingency_tab)
-        
-        #Make plot object to print to individual PDF page  
+
+        #Make plot object to print to individual PDF page
         model_assess_plots <- patchwork::wrap_plots(
           #roc_plot
           roc_curves %>%
@@ -333,7 +455,7 @@ cat_contingency <- function(
               ggplot(aes(x=pred_prob, y = Proportion)) +
               geom_point() +
               geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
-              ylim(c(0, 1)) + 
+              ylim(c(0, 1)) +
               xlim(c(0, 1)) +
               xlab("Predicted probability \n in each group") +
               ylab("Proportion of outcome \n in each group"),
@@ -355,7 +477,7 @@ cat_contingency <- function(
               ggplot(aes(x=as.character(.data[[var]]), y = Proportion)) +
               geom_col() +
               geom_text(aes(label = round(Proportion,decimals)), vjust=-0.2, size = 3) +
-              ylim(c(0, 1)) + 
+              ylim(c(0, 1)) +
               xlab(paste0(var_name)) +
               ylab("Proportion of outcome \n in each group"),
             ncol = 2, nrow = 1
@@ -367,13 +489,11 @@ cat_contingency <- function(
       print(plot_list)
       dev.off()
     }
-    } 
-  #if no outcome - only looking at categorical vars only
-  else{
+    } else{ #if no outcome - only looking at categorical vars only
     #Analysis stuff for when no outcomes
     if(is.null(saving_name)){
       #Save table with default name
-      } 
+      }
     else{
       #save tables with specified name
       }
