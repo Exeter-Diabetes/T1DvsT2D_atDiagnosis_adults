@@ -275,7 +275,7 @@ plotB <- ggplot(dka_ci, aes(x = factor(prob_label,
   #geom_text(aes(y = 0, label = n_row), vjust = 1) +
   labs(x = "Clinical features only model probability (%)",
        y = "Percentage",
-       title = "% Diabetes ketoacidosis ever") +
+       title = "% Diabetes ketoacidosis") +
   theme(text = element_text(size = 20))
 #C) T1D code
 plotC <- ggplot(t1_code_ci, aes(x = factor(prob_label,
@@ -307,7 +307,7 @@ plotC <- ggplot(t1_code_ci, aes(x = factor(prob_label,
   ylim(0,100) +
   labs(x = "Clinical features only model probability (%)",
        y = "Percentage",
-       title = "% Type 1 diabetes code ever") +
+       title = "% Type 1 diabetes code") +
   theme(text = element_text(size = 20))
 #D) Basal bolus
 plotD <- ggplot(basal_bolus_ci, aes(x = factor(prob_label,
@@ -351,6 +351,18 @@ joint_plot <- patchwork::wrap_plots(
 )+ patchwork::plot_annotation(tag_levels = list(c("A", "B", "C", "D")))
 print(joint_plot)
 dev.off()
-ggsave("figures/Figure4.jpeg", joint_plot, height = 16, width = 26)
+#ggsave("figures/Figure4.jpeg", joint_plot, height = 16, width = 26)
 
 
+pdf("figures/Figure4A.pdf", width = 13, height = 8)
+plotA
+dev.off()
+pdf("figures/Figure4B.pdf", width = 13, height = 8)
+plotB
+dev.off()
+pdf("figures/Figure4C.pdf", width = 13, height = 8)
+plotC
+dev.off()
+pdf("figures/Figure4D.pdf", width = 13, height = 8)
+plotD
+dev.off()
