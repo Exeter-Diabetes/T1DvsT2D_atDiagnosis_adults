@@ -648,3 +648,13 @@ panel_plot_horizontal <- patchwork::wrap_plots(
 pdf("figures/Figure5.pdf", width = 30, height = 10)
 panel_plot_horizontal
 dev.off()
+
+pdf("figures/Figure5A.pdf", width = 10, height = 10)
+STRAT_PERC
+dev.off()
+pdf("figures/Figure5B.pdf", width = 10, height = 10)
+SENS_PERC
+dev.off()
+pdf("figures/Figure5C.pdf", width = 10, height = 10)
+SPEC_PERC
+dev.off()
