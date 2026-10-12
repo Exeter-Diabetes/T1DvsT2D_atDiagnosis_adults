@@ -1,7 +1,7 @@
 #####################################################################################
-# Supplementary Figure 16
+# Supplementary Figure 15
 # StartRight & StartRight Prime datasets (18-50s)
-# Antibody positive
+# Antibody negative
 # Primary Outcome: SRoutcome
 #####################################################################################
 
@@ -51,6 +51,7 @@ build_row <- function(title_grob, roc, dat_text, violin_data, pred_prob_name, ca
     geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
     ylim(c(0, 1)) +
     xlim(c(0, 1)) +
+    geom_smooth(method = "loess", span = 1, se = FALSE, colour = "blue", linewidth = 0.75) +
     geom_errorbar(aes(ymin = lower, ymax = upper)) +
     theme_bw() +
     theme(text = element_text(size = 20))
@@ -81,6 +82,10 @@ SR_SRout_ccc <- SR_SRout_ccc %>%
     famhisnoninsdiab = ifelse(is.na(famhisnoninsdiab), "No", famhisnoninsdiab),
     Eth_4cat = ifelse(Eth_5cat %in% c("Other", "Mixed"), "Other/Mixed", Eth_5cat)
   )
+SR_SRout_ccc$SRoutcome <- as.numeric(SR_SRout_ccc$SRoutcome)
+SR_SRout_ccc$DKA <- as.character(SR_SRout_ccc$DKA)
+SR_SRout_ccc$osmotic <- as.character(SR_SRout_ccc$osmotic)
+SR_SRout_ccc$autoimmune <- as.character(SR_SRout_ccc$autoimmune)
 
 SR_50_SRout_ccc <- SR_50_SRout_ccc %>%
   mutate(
@@ -88,11 +93,19 @@ SR_50_SRout_ccc <- SR_50_SRout_ccc %>%
     famhisnoninsdiab = ifelse(is.na(famhisnoninsdiab), "No", famhisnoninsdiab),
     Eth_4cat = ifelse(Eth_5cat %in% c("Other", "Mixed"), "Other/Mixed", Eth_5cat)
   )
+SR_50_SRout_ccc$SRoutcome <- as.numeric(SR_50_SRout_ccc$SRoutcome)
+SR_50_SRout_ccc$DKA <- as.character(SR_50_SRout_ccc$DKA)
+SR_50_SRout_ccc$osmotic <- as.character(SR_50_SRout_ccc$osmotic)
+SR_50_SRout_ccc$autoimmune <- as.character(SR_50_SRout_ccc$autoimmune)
 
 SR_m12_data <- SR_SRout_ccc %>%
   drop_na(all_of(all_vars_12))
+SR_m3_data <- SR_SRout_ccc %>%
+  drop_na(all_of(all_vars_3))
 
-SR_m3_data <- SR_50_SRout_ccc %>%
+SRP_m12_data <- SR_50_SRout_ccc %>%
+  drop_na(all_of(all_vars_12))
+SRP_m3_data <- SR_50_SRout_ccc %>%
   drop_na(all_of(all_vars_3))
 
 # Subset data -----------------------------------------------------------------------
@@ -102,24 +115,30 @@ SR_ss_12 <- SR_m12_data %>%
 SR_ss_3 <- SR_m3_data %>%
   filter(num_anti != 0)
 
+SRP_ss_12 <- SRP_m12_data %>%
+  filter(num_anti != 0)
+
+SRP_ss_3 <- SRP_m3_data %>%
+  filter(num_anti != 0)
+
 # Extract dataset statistics --------------------------------------------------------
 m12_n <- nrow(SR_ss_12)
 m3_n <- nrow(SR_ss_3)
+Pm12_n <- nrow(SRP_ss_12)
+Pm3_n <- nrow(SRP_ss_3)
 n12_T1D <- SR_ss_12 %>%
   filter(SRoutcome == 1) %>%
   nrow()
 n3_T1D <- SR_ss_3 %>%
   filter(SRoutcome == 1) %>%
   nrow()
+Pn12_T1D <- SRP_ss_12 %>%
+  filter(SRoutcome == 1) %>%
+  nrow()
+Pn3_T1D <- SRP_ss_3 %>%
+  filter(SRoutcome == 1) %>%
+  nrow()
 # Get model information for plotting ---------------------------------------------
-###Model 1 ROW --------------------------------------------------------------------------
-model_info(model = m1,
-           test_data = SR_ss_12,
-           outcome = "SRoutcome",
-           saving_name = "temp_dataset_ss_outcome_mY",
-           manual_plotting = TRUE,
-           manual_plot_name = "m1")
-
 ###Model 2 ROW --------------------------------------------------------------------------
 model_info(model = m2,
            test_data = SR_ss_12,
@@ -135,68 +154,86 @@ model_info(model = m3,
            saving_name = "temp_dataset_ss_outcome_mY",
            manual_plotting = TRUE,
            manual_plot_name = "m3")
-###Model 4 ROW --------------------------------------------------------------------------
-model_info(model = m4,
-           test_data = SR_ss_3,
+
+###Model 2 ROW --------------------------------------------------------------------------
+model_info(model = m2,
+           test_data = SRP_ss_12,
            outcome = "SRoutcome",
            saving_name = "temp_dataset_ss_outcome_mY",
            manual_plotting = TRUE,
-           manual_plot_name = "m4")
+           manual_plot_name = "P_m2")
+###Model 3 ROW --------------------------------------------------------------------------
+model_info(model = m3,
+           test_data = SRP_ss_3,
+           outcome = "SRoutcome",
+           saving_name = "temp_dataset_ss_outcome_mY",
+           manual_plotting = TRUE,
+           manual_plot_name = "P_m3")
 #Make sure outcome variable is a character for plotting------------------------------
 SR_ss_12 <- SR_ss_12 %>%
   mutate(SRoutcome = as.character(SRoutcome))
 SR_ss_3 <- SR_ss_3 %>%
   mutate(SRoutcome = as.character(SRoutcome))
+SRP_ss_12 <- SRP_ss_12 %>%
+  mutate(SRoutcome = as.character(SRoutcome))
+SRP_ss_3 <- SRP_ss_3 %>%
+  mutate(SRoutcome = as.character(SRoutcome))
 # Prepare model titles --------------------------------------------------------------
 model2_text <- paste0("Clinical features + number of positive antibodies model (n=", m12_n, "; Type 1=", n12_T1D, ")")
 model3_text <- paste0("Clinical features + number of positive antibodies + T1DGRS model (n=", m3_n, "; Type 1=", n3_T1D, ")")
+Pmodel2_text <- paste0("Clinical features + number of positive antibodies model (n=", Pm12_n, "; Type 1=", Pn12_T1D, ")")
+Pmodel3_text <- paste0("Clinical features + number of positive antibodies + T1DGRS model (n=", Pm3_n, "; Type 1=", Pn3_T1D, ")")
 # Build row (model) heading objects ------------------------------------------------
-## For model 1
-title_m1 <- patchwork::wrap_elements(
-  ggpubr::text_grob(model1_text,
+start_heading <- patchwork::wrap_elements(
+  ggpubr::text_grob("StartRight",
                     face = "bold",
                     size = 20,
-                    color = "black",
-                    hjust = 0.95)
+                    hjust = 5.1)
+)
+
+prime_heading <- patchwork::wrap_elements(
+  ggpubr::text_grob("StartRight Prime",
+                    face = "bold",
+                    size = 20,
+                    hjust = 3.2)
 )
 ## For model 2
-title_m2 <- patchwork::wrap_elements(
+title_m1 <- patchwork::wrap_elements(
   ggpubr::text_grob(model2_text,
                     face = "bold",
                     size = 20,
                     color = "black",
-                    hjust = 0.61)
+                    hjust = 0.83)
 )
 ## For model 3
-title_m3 <- patchwork::wrap_elements(
+title_m2 <- patchwork::wrap_elements(
   ggpubr::text_grob(model3_text,
                     face = "bold",
                     size = 20,
                     color = "black",
-                    hjust = 0.53)
+                    hjust = 0.71)
 )
-## For model 4
-title_m4 <- patchwork::wrap_elements(
-  ggpubr::text_grob(model4_text,
+## For model 2
+title_m3 <- patchwork::wrap_elements(
+  ggpubr::text_grob(Pmodel2_text,
                     face = "bold",
                     size = 20,
                     color = "black",
-                    hjust = 0.85)
+                    hjust = 0.83)
+)
+## For model 4
+title_m4 <- patchwork::wrap_elements(
+  ggpubr::text_grob(Pmodel3_text,
+                    face = "bold",
+                    size = 20,
+                    color = "black",
+                    hjust = 0.71)
 )
 
 # Build plot row objects -----------------------------------------------------------
-## For model 1
+## For model 2
 row_m1 <- build_row(
   title_m1,
-  roc_curves_m1,
-  dat_text_m1,
-  SR_ss_12,
-  "pred_prob_m1",
-  cal_prep_m1
-)
-## For model 2
-row_m2 <- build_row(
-  title_m2,
   roc_curves_m2,
   dat_text_m2,
   SR_ss_12,
@@ -204,36 +241,51 @@ row_m2 <- build_row(
   cal_prep_m2
 )
 ## For model 3
-row_m3 <- build_row(
-  title_m3,
+row_m2 <- build_row(
+  title_m2,
   roc_curves_m3,
   dat_text_m3,
   SR_ss_3,
   "pred_prob_m3",
   cal_prep_m3
 )
-## For model 4
+## For model 2
+row_m3 <- build_row(
+  title_m3,
+  roc_curves_P_m2,
+  dat_text_P_m2,
+  SRP_ss_12,
+  "pred_prob_P_m2",
+  cal_prep_P_m2
+)
+## For model 3
 row_m4 <- build_row(
   title_m4,
-  roc_curves_m4,
-  dat_text_m4,
-  SR_ss_3,
-  "pred_prob_m4",
-  cal_prep_m4
+  roc_curves_P_m3,
+  dat_text_P_m3,
+  SRP_ss_3,
+  "pred_prob_P_m3",
+  cal_prep_P_m3
 )
 
 # Combine rows into a single figure -------------------------------------------------
 model_display_item <- patchwork::wrap_plots(
-  row_m1, row_m2, row_m3, row_m4,
-  ncol = 1, nrow = 4
-) + patchwork::plot_annotation(tag_levels = list(c("", "A", "B", "C",
+  start_heading,
+  row_m1,
+  row_m2,
+  prime_heading,
+  row_m3,
+  row_m4,
+  ncol = 1,
+  heights = c(0.08, 1, 1, 0.08, 1, 1)
+) + patchwork::plot_annotation(tag_levels = list(c("", "", "A", "B", "C",
                                                    "", "D", "E", "F",
-                                                   "", "G", "H", "I",
+                                                   "", "", "G", "H", "I",
                                                    "", "J", "K", "L")))
 
 # Save outputs ----------------------------------------------------------------------
-pdf("~/PhD/StartRight_paper/T1DvsT2D_atDiagnosis_adults/neat/AI_neat/figures/Supp_Figure16.pdf", height = 20, width = 16)
+pdf("~/PhD/StartRight_paper/T1DvsT2D_atDiagnosis_adults/figures/Supp_Figure16.pdf", height = 20, width = 16)
 print(model_display_item)
 dev.off()
 
-ggsave("~/PhD/StartRight_paper/T1DvsT2D_atDiagnosis_adults/neat/AI_neat/figures/Supp_Figure16.jpeg", model_display_item, height = 20, width = 16)
+ggsave("~/PhD/StartRight_paper/T1DvsT2D_atDiagnosis_adults/figures/Supp_Figure16.jpeg", model_display_item, height = 20, width = 16)

@@ -332,6 +332,7 @@ m1_plots_abc <- patchwork::wrap_plots(
     ylab("Proportion of T1D \n in each decile") +
     geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
     ylim(c(0, 1)) + xlim(c(0, 1)) +
+    geom_smooth(method = "loess", span = 1, se = FALSE, colour = "blue", linewidth = 0.75) +
     geom_errorbar(aes(ymin = lower, ymax = upper))+
     theme_bw() +
     theme(text = element_text(size = 20))
@@ -387,6 +388,7 @@ m2_plots_abc <- patchwork::wrap_plots(
     ylab("Proportion of T1D \n in each decile") +
     geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
     ylim(c(0, 1)) + xlim(c(0, 1)) +
+    geom_smooth(method = "loess", span = 1, se = FALSE, colour = "blue", linewidth = 0.75) +
     geom_errorbar(aes(ymin = lower, ymax = upper))+
     theme_bw() +
     theme(text = element_text(size = 20))
@@ -441,6 +443,7 @@ m3_plots_abc <- patchwork::wrap_plots(
     ylab("Proportion of T1D \n in each decile") +
     geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
     ylim(c(0, 1)) + xlim(c(0, 1)) +
+    geom_smooth(method = "loess", span = 1, se = FALSE, colour = "blue", linewidth = 0.75) +
     geom_errorbar(aes(ymin = lower, ymax = upper))+
     theme_bw() +
     theme(text = element_text(size = 20))
@@ -495,6 +498,7 @@ m4_plots_abc <- patchwork::wrap_plots(
     ylab("Proportion of T1D \n in each decile") +
     geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
     ylim(c(0, 1)) + xlim(c(0, 1)) +
+    geom_smooth(method = "loess", span = 1, se = FALSE, colour = "blue", linewidth = 0.75) +
     geom_errorbar(aes(ymin = lower, ymax = upper))+
     theme_bw() +
     theme(text = element_text(size = 20))

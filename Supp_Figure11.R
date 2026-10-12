@@ -51,6 +51,7 @@ build_row <- function(title_grob, roc, dat_text, violin_data, pred_prob_name, ca
     geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
     ylim(c(0, 1)) +
     xlim(c(0, 1)) +
+    geom_smooth(method = "loess", span = 1, se = FALSE, colour = "blue", linewidth = 0.75) +
     geom_errorbar(aes(ymin = lower, ymax = upper)) +
     theme_bw() +
     theme(text = element_text(size = 20))
@@ -246,8 +247,8 @@ model_display_item <- patchwork::wrap_plots(
                                                    "", "G", "H", "I",
                                                    "", "J", "K", "L")))
 # Save outputs ----------------------------------------------------------------------
-pdf("~/PhD/StartRight_paper/T1DvsT2D_atDiagnosis_adults/neat/AI_neat/figures/Supp_Figure11.pdf", height = 20, width = 16)
+pdf("~/PhD/StartRight_paper/T1DvsT2D_atDiagnosis_adults/figures/Supp_Figure11.pdf", height = 20, width = 16)
 print(model_display_item)
 dev.off()
 
-ggsave("~/PhD/StartRight_paper/T1DvsT2D_atDiagnosis_adults/neat/AI_neat/figures/Supp_Figure11.jpeg", model_display_item, height = 20, width = 16)
+ggsave("~/PhD/StartRight_paper/T1DvsT2D_atDiagnosis_adults/figures/Supp_Figure11.jpeg", model_display_item, height = 20, width = 16)
