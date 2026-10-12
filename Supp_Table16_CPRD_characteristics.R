@@ -98,9 +98,7 @@ data$autoimmune <- as.character(data$autoimmune)
 ##StartRight
 data <- data %>%
   drop_na(all_of(all_vars_12))
-# #Model12
-# SR_m12_data <- SR_SRout_ccc %>%
-#   drop_na(all_of(all_vars_12))
+
 
 #Characteristics tables -------------------------------------------------------------
 ##Whole_SR ----------------------------------------------------------------------------
