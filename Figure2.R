@@ -143,6 +143,50 @@ dat_text_m2 <- dat_text_m2 %>%
   mutate(auc_full = paste0("AUCROC: ", round(auc, 2), " (", round(auc_low, 2), ";", round(auc_high, 2), ")"))
 ### Model1 row output -----------------------------------------------------------------
 #text = element_text(size = 20)
+#roc_plot
+A <- roc_curves_m1 %>%
+  ggplot(aes(x = 1- specificities, y = sensitivities)) +
+  geom_path() +
+  theme_bw() +
+  scale_y_continuous("Sensitivity", labels = scales::percent) +
+  scale_x_continuous("1- Specificity", labels = scales::percent) +
+  theme_bw() +
+  geom_label(
+    data = dat_text_m1,
+    mapping = aes(x = 0.55, y = 0.1, label = auc_full, hjust = "center"),
+    size = 6,
+    label.r = unit(0, "pt"),
+    label.padding=unit(0.4, "lines")
+  ) +
+  theme(
+    panel.spacing.x = unit(1.5, "lines"),
+    text = element_text(size = 20)
+  )
+#boxplot
+B <- ggplot(SR_m12_data, aes(x=factor(SRoutcome,
+                                 levels = c("1","0"),
+                                 labels = c("Type 1", "Type 2")),
+                        y = pred_prob_m1)) +
+  geom_violin(aes(fill = SRoutcome, alpha = 0.2)) +
+  geom_boxplot(aes(fill = SRoutcome),width = .15,
+               outlier.size = 1) +
+  scale_fill_manual(values = c("#f1b955", "#5a8be2")) +
+  xlab("Type of diabetes")+
+  ylab("Predicted probability \n of T1D vs T2D") +
+  theme_bw()+
+  theme(legend.position = "none",
+        text = element_text(size = 20))
+#calibration plot
+C <- ggplot(cal_prep_m1, aes(x = mnpred, y = prob_obs)) +
+  geom_point() +
+  xlab("Mean predicted probability \n in each decile") +
+  ylab("Proportion of T1D \n in each decile") +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+  geom_smooth(method = "loess", span = 1, se = FALSE, colour = "blue", linewidth = 0.75) +
+  ylim(c(0, 1)) + xlim(c(0, 1)) +
+  geom_errorbar(aes(ymin = lower, ymax = upper))+
+  theme_bw()+
+  theme(text = element_text(size = 20))
 m1_plots_abc <- patchwork::wrap_plots(
   patchwork::wrap_elements(
     ggpubr::text_grob(model1_text,
@@ -151,53 +195,58 @@ m1_plots_abc <- patchwork::wrap_plots(
                       color = "black",
                       hjust = 0.95)
   ),
-  #roc_plot
-  roc_curves_m1 %>%
-    ggplot(aes(x = 1- specificities, y = sensitivities)) +
-    geom_path() +
-    theme_bw() +
-    scale_y_continuous("Sensitivity", labels = scales::percent) +
-    scale_x_continuous("1- Specificity", labels = scales::percent) +
-    theme_bw() +
-    geom_label(
-      data = dat_text_m1,
-      mapping = aes(x = 0.55, y = 0.1, label = auc_full, hjust = "center"),
-      size = 6,
-      label.r = unit(0, "pt"),
-      label.padding=unit(0.4, "lines")
-    ) +
-    theme(
-      panel.spacing.x = unit(1.5, "lines"),
-      text = element_text(size = 20)
-    ),
-  #boxplot
-  ggplot(SR_m12_data, aes(x=factor(SRoutcome,
-                                   levels = c("1","0"),
-                                   labels = c("Type 1", "Type 2")),
-                          y = pred_prob_m1)) +
-    geom_violin(aes(fill = SRoutcome, alpha = 0.2)) +
-    geom_boxplot(aes(fill = SRoutcome),width = .15,
-                 outlier.size = 1) +
-    scale_fill_manual(values = c("#f1b955", "#5a8be2")) +
-    xlab("Type of diabetes")+
-    ylab("Predicted probability \n of T1D vs T2D") +
-    theme_bw()+
-    theme(legend.position = "none",
-          text = element_text(size = 20)),
-  #calibration plot
-  ggplot(cal_prep_m1, aes(x = mnpred, y = prob_obs)) +
-    geom_point() +
-    xlab("Mean predicted probability \n in each decile") +
-    ylab("Proportion of T1D \n in each decile") +
-    geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
-    ylim(c(0, 1)) + xlim(c(0, 1)) +
-    geom_errorbar(aes(ymin = lower, ymax = upper))+
-    theme_bw()+
-    theme(text = element_text(size = 20))
+  A,
+  B,
+  C
 ) + patchwork::plot_layout(design = DESIGN_abc)
 
 
 #### Model2-----------------------------------------------------------------------
+#roc_plot
+D <- roc_curves_m2 %>%
+  ggplot(aes(x = 1- specificities, y = sensitivities)) +
+  geom_path() +
+  theme_bw() +
+  scale_y_continuous("Sensitivity", labels = scales::percent) +
+  scale_x_continuous("1- Specificity", labels = scales::percent) +
+  theme_bw() +
+  geom_label(
+    data = dat_text_m2,
+    mapping = aes(x = 0.55, y = 0.1, label = auc_full, hjust = "center"),
+    size = 6,
+    label.r = unit(0, "pt"),
+    label.padding=unit(0.4, "lines")
+  ) +
+  theme(
+    panel.spacing.x = unit(1.5, "lines"),
+    text = element_text(size = 20)
+  )
+#boxplot
+E <- ggplot(SR_m12_data, aes(x=factor(SRoutcome,
+                                 levels = c("1","0"),
+                                 labels = c("Type 1", "Type 2")),
+                        y = pred_prob_m2)) +
+  geom_violin(aes(fill = SRoutcome, alpha = 0.2)) +
+  geom_boxplot(aes(fill = SRoutcome),width = .15,
+               outlier.size = 1) +
+  scale_fill_manual(values = c("#f1b955", "#5a8be2")) +
+  xlab("Type of diabetes")+
+  ylab("Predicted probability \n of T1D vs T2D") +
+  theme_bw()+
+  theme(legend.position = "none",
+        text = element_text(size = 20))
+#calibration plot
+F_2 <- ggplot(cal_prep_m2, aes(x = mnpred, y = prob_obs)) +
+  geom_point() +
+  xlab("Mean predicted probability \n in each decile") +
+  ylab("Proportion of T1D \n in each decile") +
+  geom_smooth(method = "loess", span = 1, se = FALSE, colour = "blue", linewidth = 0.75) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+  ylim(c(0, 1)) + xlim(c(0, 1)) +
+  geom_errorbar(aes(ymin = lower, ymax = upper))+
+  theme_bw()+
+  theme(text = element_text(size = 20))
+
 m2_plots_abc <- patchwork::wrap_plots(
   patchwork::wrap_elements(
     ggpubr::text_grob(model2_text,
@@ -206,49 +255,9 @@ m2_plots_abc <- patchwork::wrap_plots(
                       color = "black",
                       hjust = 0.61)
   ),
-  #roc_plot
-  roc_curves_m2 %>%
-    ggplot(aes(x = 1- specificities, y = sensitivities)) +
-    geom_path() +
-    theme_bw() +
-    scale_y_continuous("Sensitivity", labels = scales::percent) +
-    scale_x_continuous("1- Specificity", labels = scales::percent) +
-    theme_bw() +
-    geom_label(
-      data = dat_text_m2,
-      mapping = aes(x = 0.55, y = 0.1, label = auc_full, hjust = "center"),
-      size = 6,
-      label.r = unit(0, "pt"),
-      label.padding=unit(0.4, "lines")
-    ) +
-    theme(
-      panel.spacing.x = unit(1.5, "lines"),
-      text = element_text(size = 20)
-    ),
-  #boxplot
-  ggplot(SR_m12_data, aes(x=factor(SRoutcome,
-                                   levels = c("1","0"),
-                                   labels = c("Type 1", "Type 2")),
-                          y = pred_prob_m2)) +
-    geom_violin(aes(fill = SRoutcome, alpha = 0.2)) +
-    geom_boxplot(aes(fill = SRoutcome),width = .15,
-                 outlier.size = 1) +
-    scale_fill_manual(values = c("#f1b955", "#5a8be2")) +
-    xlab("Type of diabetes")+
-    ylab("Predicted probability \n of T1D vs T2D") +
-    theme_bw()+
-    theme(legend.position = "none",
-          text = element_text(size = 20)),
-  #calibration plot
-  ggplot(cal_prep_m2, aes(x = mnpred, y = prob_obs)) +
-    geom_point() +
-    xlab("Mean predicted probability \n in each decile") +
-    ylab("Proportion of T1D \n in each decile") +
-    geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
-    ylim(c(0, 1)) + xlim(c(0, 1)) +
-    geom_errorbar(aes(ymin = lower, ymax = upper))+
-    theme_bw()+
-    theme(text = element_text(size = 20))
+  D,
+  E,
+  F_2
 )  + patchwork::plot_layout(design = DESIGN_abc)
 
 
@@ -264,3 +273,22 @@ model_display_item <- patchwork::wrap_plots(
                                                    "", "D", "E", "F")))
 print(model_display_item)
 dev.off()
+
+# pdf("figures/Figure2A.pdf", width = 7, height = 5)
+# A
+# dev.off()
+# pdf("figures/Figure2B.pdf", width = 7, height = 5)
+# B
+# dev.off()
+# pdf("figures/Figure2C.pdf", width = 7, height = 5)
+# C
+# dev.off()
+# pdf("figures/Figure2D.pdf", width = 7, height = 5)
+# D
+# dev.off()
+# pdf("figures/Figure2E.pdf", width = 7, height = 5)
+# E
+# dev.off()
+# pdf("figures/Figure2F.pdf", width = 7, height = 5)
+# F_2
+# dev.off()
