@@ -153,6 +153,9 @@ all_vars_12 <- c(varlist_12, varlist_cat_12)
 data <- data %>%
   drop_na(all_of(all_vars_12))
 
+
+
+
 #Define strategies -----------------------------------------------------------------
 ##Joint SR ----------------------------------------------------------------------
 SR_joint_cc <- SR_joint_cc %>%
@@ -456,6 +459,13 @@ NICE_m12_CPRD <- SR_mD_data_CPRD %>%
     score6 = ifelse(Score1 > 6, 1, 0),
     ADAfeatures = ifelse(ADAfeatures == "1+ ADA features", 1, 0)
   )
+
+#Split by age
+data18_50 <- NICE_m12_CPRD %>%
+  filter(AgeatDiagnosis <51)
+
+data50plus <- NICE_m12_CPRD %>%
+  filter(AgeatDiagnosis >=51)
 
 SR_mD_data_CPRD %>%
   filter(Score1 > 5) %>%
@@ -1182,8 +1192,208 @@ MODEL10_CPRD <- NICE_m12_CPRD %>%
     pbasal = nbasal/totalover*100
   )
 
+##CPRD 18-50s ---------------------------------------------------------------------------
+#1) antibodies -----------------------------------------------------------------------
+ANTI1_CPRD_18_50 <- data18_50 %>%
+  summarise(
+    variable = "pos_anti",
+    n = n(),
+    totalover = n(),
+    perc_testing = (totalover/n)*100,
+    nins = sum(SRoutcome == 1 ),
+    pins = nins/totalover*100,
+    nDKA = sum(dka == 1 ),
+    pDKA = nDKA/totalover*100,
+    nT1D = sum(t1_code == 1 ),
+    pT1D = nT1D/totalover*100,
+    nbasal = sum(basal_bolus == 1 ),
+    pbasal = nbasal/totalover*100
+  )
+#2) NICE1 without age-----------------------------------------------------------------
+NICE1_noage_CPRD_18_50 <- data18_50 %>%
+  summarise(
+    variable = "NICE1_pos_noage",
+    n = n(),
+    totalover = sum(NICEfeatures1_noage == 1),
+    perc_testing = (totalover/n)*100,
+    nins = sum(SRoutcome == 1 & NICEfeatures1_noage == 1),
+    pins = nins/totalover*100,
+    nDKA = sum(dka == 1 & NICEfeatures1_noage == 1),
+    pDKA = nDKA/totalover*100,
+    nT1D = sum(t1_code == 1 & NICEfeatures1_noage == 1),
+    pT1D = nT1D/totalover*100,
+    nbasal = sum(basal_bolus == 1 & NICEfeatures1_noage == 1),
+    pbasal = nbasal/totalover*100
+  )
 
+#3) ADA features ------------------------------------------------------------------
+ADA_CPRD_18_50 <- data18_50 %>%
+  summarise(
+    variable = "ADAfeatures_pos",
+    n = n(),
+    totalover = sum(ADAfeatures == 1),
+    perc_testing = (totalover/n)*100,
+    nins = sum(SRoutcome == 1 & ADAfeatures == 1),
+    pins = nins/totalover*100,
+    nDKA = sum(dka == 1 & ADAfeatures == 1),
+    pDKA = nDKA/totalover*100,
+    nT1D = sum(t1_code == 1 & ADAfeatures == 1),
+    pT1D = nT1D/totalover*100,
+    nbasal = sum(basal_bolus == 1 & ADAfeatures == 1),
+    pbasal = nbasal/totalover*100
+  )
 
+#4a) score 5  ------------------------------------------------------------------
+# SCORE5_CPRD <- NICE_m12_CPRD %>%
+#   summarise(
+#     variable = "score5_pos",
+#     n = n(),
+#     totalover = sum(score5 == 1),
+#     perc_testing = (totalover/n)*100,
+#     nins = sum(SRoutcome == 1 & score5 == 1),
+#     pins = nins/totalover*100,
+#     nDKA = sum(dka == 1 & score5 == 1),
+#     pDKA = nDKA/totalover*100,
+#     nT1D = sum(t1_code == 1 & score5 == 1),
+#     pT1D = nT1D/totalover*100,
+#     nbasal = sum(basal_bolus == 1 & score5 == 1),
+#     pbasal = nbasal/totalover*100
+#   )
+
+#4b) score 6  ------------------------------------------------------------------
+SCORE6_CPRD_18_50 <- data18_50 %>%
+  summarise(
+    variable = "score6_pos",
+    n = n(),
+    totalover = sum(score6 == 1),
+    perc_testing = (totalover/n)*100,
+    nins = sum(SRoutcome == 1 & score6 == 1),
+    pins = nins/totalover*100,
+    nDKA = sum(dka == 1 & score6 == 1),
+    pDKA = nDKA/totalover*100,
+    nT1D = sum(t1_code == 1 & score6 == 1),
+    pT1D = nT1D/totalover*100,
+    nbasal = sum(basal_bolus == 1 & score6 == 1),
+    pbasal = nbasal/totalover*100
+  )
+
+#5) MODEL 10 ------------------------------------------------------------------
+MODEL10_CPRD_18_50 <- data18_50 %>%
+  summarise(
+    variable = "model10_pos",
+    n = n(),
+    totalover = sum(model10 == 1),
+    perc_testing = (totalover/n)*100,
+    nins = sum(SRoutcome == 1 & model10 == 1),
+    pins = nins/totalover*100,
+    nDKA = sum(dka == 1 & model10 == 1),
+    pDKA = nDKA/totalover*100,
+    nT1D = sum(t1_code == 1 & model10 == 1),
+    pT1D = nT1D/totalover*100,
+    nbasal = sum(basal_bolus == 1 & model10 == 1),
+    pbasal = nbasal/totalover*100
+  )
+##CPRD >50s---------------------------------------------------------------------------
+#1) antibodies -----------------------------------------------------------------------
+ANTI1_CPRD_50plus <- data50plus %>%
+  summarise(
+    variable = "pos_anti",
+    n = n(),
+    totalover = n(),
+    perc_testing = (totalover/n)*100,
+    nins = sum(SRoutcome == 1 ),
+    pins = nins/totalover*100,
+    nDKA = sum(dka == 1 ),
+    pDKA = nDKA/totalover*100,
+    nT1D = sum(t1_code == 1 ),
+    pT1D = nT1D/totalover*100,
+    nbasal = sum(basal_bolus == 1 ),
+    pbasal = nbasal/totalover*100
+  )
+#2) NICE1 without age-----------------------------------------------------------------
+NICE1_noage_CPRD_50plus <- data50plus %>%
+  summarise(
+    variable = "NICE1_pos_noage",
+    n = n(),
+    totalover = sum(NICEfeatures1_noage == 1),
+    perc_testing = (totalover/n)*100,
+    nins = sum(SRoutcome == 1 & NICEfeatures1_noage == 1),
+    pins = nins/totalover*100,
+    nDKA = sum(dka == 1 & NICEfeatures1_noage == 1),
+    pDKA = nDKA/totalover*100,
+    nT1D = sum(t1_code == 1 & NICEfeatures1_noage == 1),
+    pT1D = nT1D/totalover*100,
+    nbasal = sum(basal_bolus == 1 & NICEfeatures1_noage == 1),
+    pbasal = nbasal/totalover*100
+  )
+
+#3) ADA features ------------------------------------------------------------------
+ADA_CPRD_50plus <- data50plus %>%
+  summarise(
+    variable = "ADAfeatures_pos",
+    n = n(),
+    totalover = sum(ADAfeatures == 1),
+    perc_testing = (totalover/n)*100,
+    nins = sum(SRoutcome == 1 & ADAfeatures == 1),
+    pins = nins/totalover*100,
+    nDKA = sum(dka == 1 & ADAfeatures == 1),
+    pDKA = nDKA/totalover*100,
+    nT1D = sum(t1_code == 1 & ADAfeatures == 1),
+    pT1D = nT1D/totalover*100,
+    nbasal = sum(basal_bolus == 1 & ADAfeatures == 1),
+    pbasal = nbasal/totalover*100
+  )
+
+#4a) score 5  ------------------------------------------------------------------
+# SCORE5_CPRD <- NICE_m12_CPRD %>%
+#   summarise(
+#     variable = "score5_pos",
+#     n = n(),
+#     totalover = sum(score5 == 1),
+#     perc_testing = (totalover/n)*100,
+#     nins = sum(SRoutcome == 1 & score5 == 1),
+#     pins = nins/totalover*100,
+#     nDKA = sum(dka == 1 & score5 == 1),
+#     pDKA = nDKA/totalover*100,
+#     nT1D = sum(t1_code == 1 & score5 == 1),
+#     pT1D = nT1D/totalover*100,
+#     nbasal = sum(basal_bolus == 1 & score5 == 1),
+#     pbasal = nbasal/totalover*100
+#   )
+
+#4b) score 6  ------------------------------------------------------------------
+SCORE6_CPRD_50plus <- data50plus %>%
+  summarise(
+    variable = "score6_pos",
+    n = n(),
+    totalover = sum(score6 == 1),
+    perc_testing = (totalover/n)*100,
+    nins = sum(SRoutcome == 1 & score6 == 1),
+    pins = nins/totalover*100,
+    nDKA = sum(dka == 1 & score6 == 1),
+    pDKA = nDKA/totalover*100,
+    nT1D = sum(t1_code == 1 & score6 == 1),
+    pT1D = nT1D/totalover*100,
+    nbasal = sum(basal_bolus == 1 & score6 == 1),
+    pbasal = nbasal/totalover*100
+  )
+
+#5) MODEL 10 ------------------------------------------------------------------
+MODEL10_CPRD_50plus <- data50plus %>%
+  summarise(
+    variable = "model10_pos",
+    n = n(),
+    totalover = sum(model10 == 1),
+    perc_testing = (totalover/n)*100,
+    nins = sum(SRoutcome == 1 & model10 == 1),
+    pins = nins/totalover*100,
+    nDKA = sum(dka == 1 & model10 == 1),
+    pDKA = nDKA/totalover*100,
+    nT1D = sum(t1_code == 1 & model10 == 1),
+    pT1D = nT1D/totalover*100,
+    nbasal = sum(basal_bolus == 1 & model10 == 1),
+    pbasal = nbasal/totalover*100
+  )
 
 #Tables ----------------------------------------------------------------------------
 #A) Separate ---------------------------------------------------------------------------
@@ -1225,7 +1435,7 @@ SR_criteria <- left_join(SR_criteria_table, `tables/SR_MODELS_SCORE_function`) %
     `SR: Specificity`
   )
 
-#write_xlsx(NICE_criteria,"tables/Supp_Table22_SR_criteria.xlsx")
+write_xlsx(SR_criteria,"tables/Supp_Table17_SR_criteria.xlsx")
 ##Prime -------------------------------------------------------------------------------
 PRIME_criteria_table <- rbind(ANTI1_PRIME, NICE1_noage_PRIME, ADA_PRIME, MODEL10_PRIME, MODEL_ANTIS_PRIME,
                               #SCORE5_PRIME,
@@ -1266,7 +1476,7 @@ criteria_PRIME <- left_join(PRIME_criteria_table, `tables/PRIME_MODELS_SCORE_fun
     `PRIME: Specificity`
   )
 
-#write_xlsx(NICE_criteria_PRIME,"tables/Supp_Table22_PRIME_criteria.xlsx")
+write_xlsx(criteria_PRIME,"tables/Supp_Table17_PRIME_criteria.xlsx")
 
 #B) Joint ------------------------------------------------------------------------------
 Joint_criteria_table <- rbind(ANTI1, NICE1_noage, ADA, MODEL10, MODEL_ANTIS,
@@ -1319,12 +1529,32 @@ CPRD_criteria_table <- CPRD_criteria_table %>%
       round(perc_testing,2), " [", totalover, "/", n, "]")) %>%
   select(variable, `% CPRD`)
 write_xlsx(CPRD_criteria_table,"tables/Supp_Table17_CPRD_only.xlsx")
+#18-50s
+CPRD_criteria_table_18_50 <- rbind(ANTI1_CPRD_18_50, NICE1_noage_CPRD_18_50, ADA_CPRD_18_50, MODEL10_CPRD_18_50,
+                             #SCORE5_CPRD,
+                             SCORE6_CPRD_18_50)
+CPRD_criteria_table_18_50 <- CPRD_criteria_table_18_50 %>%
+  mutate(
+    `% CPRD` = paste0(
+      round(perc_testing,2), " [", totalover, "/", n, "]")) %>%
+  select(variable, `% CPRD`)
+write_xlsx(CPRD_criteria_table_18_50,"tables/Supp_Table17_CPRD_18_50.xlsx")
+#>50s
+CPRD_criteria_table_50plus <- rbind(ANTI1_CPRD_50plus, NICE1_noage_CPRD_50plus, ADA_CPRD_50plus, MODEL10_CPRD_50plus,
+                             #SCORE5_CPRD,
+                             SCORE6_CPRD_50plus)
+CPRD_criteria_table_50plus <- CPRD_criteria_table_50plus %>%
+  mutate(
+    `% CPRD` = paste0(
+      round(perc_testing,2), " [", totalover, "/", n, "]")) %>%
+  select(variable, `% CPRD`)
+write_xlsx(CPRD_criteria_table_50plus,"tables/Supp_Table17_CPRD_50plus.xlsx")
 
 #Make table ----------------------------------------------------------------------
 #A) Supp_Table17A (separate)
-# Tbl17A <- left_join(CPRD_criteria_table, SR_criteria)
-# Tbl17A <- left_join(Tbl17A, criteria_PRIME)
-# write_xlsx(Tbl17A,"tables/Supp_Table17A.xlsx")
+Tbl17B <- left_join(CPRD_criteria_table, SR_criteria)
+Tbl17B <- left_join(Tbl17B, criteria_PRIME)
+write_xlsx(Tbl17B,"tables/Supp_Table17_separate.xlsx")
 #B) Supp_Table17B (joint)
 #Tbl17B <- left_join(CPRD_criteria_table, Joint_criteria)
 Tbl17A <- full_join(CPRD_criteria_table, Joint_criteria)
