@@ -399,8 +399,9 @@ model_comparisons <- function(
       sum_table$n <- nrow(dataset_cc)
       #browser()
       if(length(categories) > 2) {
+        #browser()
         coef_table <- as.data.frame(model$coefficient)
-        remove_rows <- var_list_length
+        remove_rows <- var_list_length + 1
         coef_table <- tail(coef_table, -remove_rows)
         coef_table$variable <- var_cat
         coef_table$category <- as.character(rownames(coef_table))
@@ -442,8 +443,9 @@ model_comparisons <- function(
 
       model_comp_table <- rbind(model_comp_table, sum_table)
     }
-    browser()
-    model_comp_table <- full_join(model_comp_table, uni_cat_coeffs)
+    #browser()
+    if(length(categories) > 2) {
+    model_comp_table <- full_join(model_comp_table, uni_cat_coeffs)}
     #Save output data.frame to global environment
     ## If user-defined saving name not provided
     if(is.null(saving_name)){
